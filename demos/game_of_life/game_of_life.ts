@@ -18,6 +18,7 @@
 // tslint:disable:restrict-plus-operands
 // tslint:disable-next-line:max-line-length
 import {AdagradOptimizer, Array2D, CostReduction, FeedEntry, Graph, InGPUMemoryShuffledInputProviderBuilder, NDArray, NDArrayMath, Session, Tensor} from 'deeplearn';
+import {Array1D} from 'deeplearn/dist/math/ndarray';
 
 /** Generates GameOfLife sequence pairs (current sequence + next sequence) */
 export class GameOfLife {
@@ -39,31 +40,24 @@ export class GameOfLife {
     this.math.scope(keep => {
       const randWorld =
           Array2D.randUniform([this.size - 2, this.size - 2], 0, 2, 'int32');
-      const worldPadded = GameOfLife.padArray(randWorld);
-      // TODO(kreeger): This logic can be vectorized and kept on the GPU with a
-      // logical_or() and where() implementations.
-      const numNeighbors =
-          this.countNeighbors(this.size, worldPadded).dataSync();
-      const worldValues = randWorld.dataSync();
-      const nextWorldValues = [];
-      for (let i = 0; i < numNeighbors.length; i++) {
-        const value = numNeighbors[i];
-        let nextVal = 0;
-        if (value === 3) {
-          // Cell rebirths
-          nextVal = 1;
-        } else if (value === 2) {
-          // Cell survives
-          nextVal = worldValues[i];
-        } else {
-          // Cell dies
-          nextVal = 0;
-        }
-        nextWorldValues.push(nextVal);
-      }
+      const worldPadded = this.math.pad2D(randWorld, [[1, 1], [1, 1]]);
+      const numNeighbors = this.countNeighbors(this.size, worldPadded);
+
+      const cellRebirths =
+          this.math.equal(numNeighbors, Array1D.new([3], 'int32'));
+
+      const cellSurvives = this.math.logicalOr(
+          cellRebirths,
+          this.math.equal(numNeighbors, Array1D.new([2], 'int32')));
+
+      const survivors = this.math.where(
+          cellSurvives, randWorld, Array2D.zerosLike(randWorld));
+
+      const nextWorld =
+          this.math.where(cellRebirths, Array2D.onesLike(randWorld), survivors);
+
       world = keep(worldPadded);
-      worldNext = keep(GameOfLife.padArray(
-          Array2D.new(randWorld.shape, nextWorldValues, 'int32')));
+      worldNext = keep(this.math.pad2D(nextWorld as Array2D, [[1, 1], [1, 1]]));
     });
     return [world, worldNext];
   }
@@ -92,37 +86,6 @@ export class GameOfLife {
         neighborCount,
         this.math.slice2D(worldPadded, [2, 2], [size - 2, size - 2]));
     return neighborCount as Array2D;
-  }
-
-  /* Helper method to pad an array until the op is ready. */
-  // TODO(kreeger, #409): Drop this when math.pad() is ready.
-  private static padArray(array: NDArray): Array2D<'int32'> {
-    const x1 = array.shape[0];
-    const x2 = array.shape[1];
-    const pad = 1;
-
-    const oldValues = array.dataSync();
-    const shape = [x1 + pad * 2, x2 + pad * 2];
-    const values = [];
-
-    let z = 0;
-    for (let i = 0; i < shape[0]; i++) {
-      let rangeStart = -1;
-      let rangeEnd = -1;
-      if (i > 0 && i < shape[0] - 1) {
-        rangeStart = i * shape[1] + 1;
-        rangeEnd = i * shape[1] + x2;
-      }
-      for (let j = 0; j < shape[1]; j++) {
-        const v = i * shape[0] + j;
-        if (v >= rangeStart && v <= rangeEnd) {
-          values[v] = oldValues[z++];
-        } else {
-          values[v] = 0;
-        }
-      }
-    }
-    return Array2D.new(shape as [number, number], values, 'int32');
   }
 }
 
