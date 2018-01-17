@@ -94,15 +94,14 @@ class TrainDisplay {
         ` - (Building training data - ${length} of ${size})`;
   }
 
-  clearTrainingData(): void { this.trainingDataElement.innerHTML = ''; }
+  clearTrainingData(): void {
+    this.trainingDataElement.innerHTML = '';
+  }
 
   private randomRGBA(): string {
     const s = 255;
-    return `rgba(${
-                   Math.round(Math.random() * s)
-                 },${
-                     Math.round(Math.random() * s)
-                   },${Math.round(Math.random() * s)},1)`;
+    return `rgba(${Math.round(Math.random() * s)},${
+        Math.round(Math.random() * s)},${Math.round(Math.random() * s)},1)`;
   }
 }
 
@@ -136,7 +135,7 @@ class WorldDisplay {
       for (let j = 0; j < world.shape[1]; j++) {
         const columnElement = document.createElement('div');
         columnElement.setAttribute('class', 'column');
-        if (world.get(i, j) === 1) {
+        if (world.get(i, j) > 0.5) {
           columnElement.classList.add('alive');
         } else {
           columnElement.classList.add('dead');
@@ -201,7 +200,7 @@ async function trainAndRender() {
   requestAnimationFrame(() => trainAndRender());
 
   if (isBuildingTrainingData) {
-    // Do 2 examples each pass:
+    // // Do 2 examples each pass:
     trainingData.push(game.generateGolExample());
     if (trainingData.length < trainingBatchSize) {
       trainingData.push(game.generateGolExample());
@@ -243,14 +242,16 @@ async function trainAndRender() {
 
 // tslint:disable-next-line:no-default-export
 export default Vue.extend({
-  data() { return data; },
+  data() {
+    return data;
+  },
   components: {DemoHeader, DemoFooter, GraphSource},
   methods: {
-    onAddSequenceClicked: async() => {
+    onAddSequenceClicked: async () => {
       worldContexts.push(new WorldContext(game.generateGolExample()));
     },
 
-    onTrainModelClicked: async() => {
+    onTrainModelClicked: async () => {
       step = 0;
       trainingSteps = parseInt(data.trainingSteps, 10);
       trainingBatchSize = parseInt(data.trainingBatchSize, 10);
@@ -274,7 +275,7 @@ export default Vue.extend({
       }
     }
   },
-  mounted: async() => {
+  mounted: async () => {
     for (let i = 0; i < 5; i++) {
       worldContexts.push(new WorldContext(game.generateGolExample()));
     }

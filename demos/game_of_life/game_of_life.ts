@@ -177,8 +177,13 @@ export class GameOfLifeModel {
     const outputs = [];
     for (let i = 0; i < worlds.length; i++) {
       const example = worlds[i];
-      inputs.push(example[0].flatten().asType('float32'));
-      outputs.push(example[1].flatten().asType('float32'));
+      const [input, output] = this.math.scope(() => {
+        const input = example[0].flatten().asType('float32');
+        const output = example[1].flatten().asType('float32');
+        return [input, output];
+      });
+      inputs.push(input);
+      outputs.push(output);
     }
 
     // TODO(kreeger): Don't really need to shuffle these.
@@ -196,11 +201,10 @@ export class GameOfLifeModel {
   /* Helper method for creating a fully connected layer. */
   private static createFullyConnectedLayer(
       graph: Graph, inputLayer: Tensor, layerIndex: number,
-      sizeOfThisLayer: number, includeRelu = true, includeBias = true): Tensor {
+      sizeOfThisLayer: number, includeRelu = true): Tensor {
     return graph.layers.dense(
         'fully_connected_' + layerIndex, inputLayer, sizeOfThisLayer,
-        includeRelu ? (x) => graph.relu(x) : (x) => graph.sigmoid(x),
-        includeBias);
+        includeRelu ? (x) => graph.relu(x) : (x) => graph.sigmoid(x));
   }
 
   /* Helper method for calculating loss. */
