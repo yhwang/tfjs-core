@@ -16,40 +16,29 @@
  */
 
 import {NamedArrayMap} from '../../../util';
-import {NDArray} from '../../ndarray';
+import {NDArray, Array1D} from '../../ndarray';
 // tslint:disable-next-line:max-line-length
 import {KernelInputConfig, KernelNode, TapeNodeInputGradientArrays} from '../tape_types';
 
-export interface DualInputArrays extends NamedArrayMap {
-  a: NDArray;
-  b: NDArray;
+export interface GatherNode<T extends NDArray> extends KernelNode {
+  inputAndArgs: GatherInputConfig<T>;
+  output: T;
+  gradient: (dy: T, y: T) => GatherGradientInputArrays<T>;
 }
 
-export interface DualGradientInputArrays extends TapeNodeInputGradientArrays {
-  a: () => NDArray;
-  b: () => NDArray;
+export interface GatherInputConfig<T extends NDArray> extends 
+    KernelInputConfig {
+  inputs: GatherInputArrays<T>;
+  args: {axis: number};
 }
 
-// Equal/NotEqual/LessEqual/Greater/GreaterEqual
-export interface EqualNode extends KernelNode {
-  inputAndArgs: EqualInputConfig;
-  output: NDArray<'bool'>;
-  gradient:
-      (dy: NDArray<'bool'>, y: NDArray<'bool'>) => DualGradientInputArrays;
+export interface GatherInputArrays<T extends NDArray> extends NamedArrayMap {
+  x: T;
+  indices: Array1D<'int32'>;
 }
 
-export interface EqualInputConfig extends KernelInputConfig {
-  inputs: DualInputArrays;
-}
-
-// LogicalOr
-export interface LogicalOrNode extends KernelNode {
-  inputAndArgs: LogicalOrInputConfig;
-  output: NDArray<'bool'>;
-  gradient:
-      (dy: NDArray<'bool'>, y: NDArray<'bool'>) => DualGradientInputArrays;
-}
-
-export interface LogicalOrInputConfig extends KernelInputConfig {
-  inputs: DualInputArrays;
+export interface GatherGradientInputArrays<T extends NDArray> extends 
+    TapeNodeInputGradientArrays {
+  x: () => T;
+  indices: () => Array1D;
 }

@@ -32,6 +32,7 @@ import {Concat1DInputConfig, Concat1DNode, Concat2DInputConfig, Concat2DNode, Co
 import {Conv2DDerBiasInputConfig, Conv2DDerBiasNode, Conv2DDerFilterInputConfig, Conv2DDerFilterNode, Conv2DDerInputInputConfig, Conv2DDerInputNode, Conv2DInputConfig, Conv2DNode, DepthwiseConv2DInputConfig} from './types/conv';
 // tslint:disable-next-line:max-line-length
 import {EqualInputConfig, EqualNode, LogicalOrInputConfig, LogicalOrNode} from './types/logical';
+import {GatherInputConfig, GatherNode} from './types/gather';
 import {LRN4DInputConfig, LRN4DNode} from './types/lrn';
 import {MatMulInputConfig, MatMulNode} from './types/matmul';
 // tslint:disable-next-line:max-line-length
@@ -47,6 +48,7 @@ import {PReLUInputConfig, PReLUNode} from './types/prelu';
 import {ReshapeNode} from './types/reshape';
 // tslint:disable-next-line:max-line-length
 import {ResizeBilinear3DInputConfig, ResizeBilinear3DNode} from './types/resize_bilinear';
+import {Reverse4DInputConfig, Reverse4DNode} from './types/reverse';
 // tslint:disable-next-line:max-line-length
 import {Slice1DInputConfig, Slice1DNode, Slice2DInputConfig, Slice2DNode, Slice3DInputConfig, Slice3DNode, Slice4DInputConfig, Slice4DNode} from './types/slice';
 import {SumInputConfig, SumNode} from './types/sum';
@@ -83,6 +85,9 @@ const KERNEL_METHODS: {
   Slice4D: (backend: MathBackend, config: Slice4DInputConfig) => {
     return backend.slice4D(
         config.inputs.x, config.args.begin, config.args.size);
+  },
+  Reverse4D: (backend: MathBackend, config: Reverse4DInputConfig) => {
+    return backend.reverse4D(config.inputs.x, config.args.axis);
   },
   Concat1D: (backend: MathBackend, config: Concat1DInputConfig) => {
     return backend.concat1D(config.inputs.a, config.inputs.b);
@@ -125,6 +130,15 @@ const KERNEL_METHODS: {
   },
   NotEqual: (backend: MathBackend, config: EqualInputConfig) => {
     return backend.notEqual(config.inputs.a, config.inputs.b);
+  },
+  LessEqual: (backend: MathBackend, config: EqualInputConfig) => {
+    return backend.lessEqual(config.inputs.a, config.inputs.b);
+  },
+  Greater: (backend: MathBackend, config: EqualInputConfig) => {
+    return backend.greater(config.inputs.a, config.inputs.b);
+  },
+  GreaterEqual: (backend: MathBackend, config: EqualInputConfig) => {
+    return backend.greaterEqual(config.inputs.a, config.inputs.b);
   },
   LogicalOr: (backend: MathBackend, config: LogicalOrInputConfig) => {
     return backend.logicalOr(config.inputs.a, config.inputs.b);
@@ -253,6 +267,10 @@ const KERNEL_METHODS: {
   Tile: (backend: MathBackend, config: TileInputConfig<NDArray>) => {
     return backend.tile(config.inputs.x, config.args.reps);
   },
+  Gather: (backend: MathBackend, config: GatherInputConfig<NDArray>) => {
+    return backend.gather(
+        config.inputs.x, config.inputs.indices, config.args.axis);
+  },
   Pad1D: (backend: MathBackend, config: Pad1DInputConfig) => {
     return backend.pad1D(
         config.inputs.x, config.args.paddings, config.args.constantValue);
@@ -352,6 +370,7 @@ export interface KernelConfigRegistry {
   Slice2D: Slice2DNode;
   Slice3D: Slice3DNode;
   Slice4D: Slice4DNode;
+  Reverse4D: Reverse4DNode;
   Concat1D: Concat1DNode;
   Concat2D: Concat2DNode;
   Concat3D: Concat3DNode;
@@ -366,6 +385,9 @@ export interface KernelConfigRegistry {
   ArgMin: ArgMinNode;
   Equal: EqualNode;
   NotEqual: EqualNode;
+  LessEqual: EqualNode;
+  Greater: EqualNode;
+  GreaterEqual: EqualNode;
   LogicalOr: LogicalOrNode;
   TopKValues: TopKValuesNode<DataType, NDArray>;
   TopKIndices: TopKIndicesNode;
@@ -406,6 +428,7 @@ export interface KernelConfigRegistry {
   Pad1D: Pad1DNode;
   Pad2D: Pad2DNode;
   Tile: TileNode<NDArray>;
+  Gather: GatherNode<NDArray>;
   Conv2D: Conv2DNode;
   Conv2DDerInput: Conv2DDerInputNode;
   Conv2DDerFilter: Conv2DDerFilterNode;
