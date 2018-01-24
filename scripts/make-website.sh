@@ -73,7 +73,8 @@ done
 cd demos/
 ./node_modules/.bin/poi build vue-demo/ -d "$TMP_DIR/demos/vue-demo/"
 ./node_modules/.bin/poi build latent-space-explorer/ \
-  -d "$TMP_DIR/demos/latent-space-explorer/"
+  -d "$TMP_DIR/demos/latent-space-explorer/" \
+./node_modules/.bin/poi build game_of_life/ -d "$TMP_DIF/demos/game_of_life/"
 cd ..
 
 # Build the homepage (no deploy since homepage is not polymer).
