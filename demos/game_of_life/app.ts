@@ -200,7 +200,7 @@ async function trainAndRender() {
   requestAnimationFrame(() => trainAndRender());
 
   if (isBuildingTrainingData) {
-    // // Do 2 examples each pass:
+    // Do 2 examples each pass:
     trainingData.push(game.generateGolExample());
     if (trainingData.length < trainingBatchSize) {
       trainingData.push(game.generateGolExample());

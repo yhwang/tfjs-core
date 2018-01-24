@@ -24,10 +24,9 @@ import * as concat_util from '../concat_util';
 import {Conv2DInfo} from '../conv_util';
 import {NDArrayMath} from '../math';
 // tslint:disable-next-line:max-line-length
-import {Array1D, Array2D, Array3D, Array4D, DataType, DataTypeMap, NDArray, Rank, Scalar} from '../ndarray';
+import {Array1D, Array2D, Array3D, Array4D, NDArray, Scalar} from '../ndarray';
 import * as types from '../types';
-import {SumTypes, SumTypesMap} from '../types';
-
+import {DataType, DataTypeMap, Rank, SumTypes, SumTypesMap} from '../types';
 import * as axis_util from './../axis_util';
 import {MathBackend} from './backend';
 import {MatrixOrientation} from './types/matmul';
@@ -130,14 +129,16 @@ export class MathBackendCPU implements MathBackend {
     return NDArray.make(x.shape, {values: new Float32Array(x.dataSync())}) as T;
   }
 
-  slice1D(x: Array1D, begin: number, size: number): Array1D {
+  slice1D<D extends DataType>(x: Array1D<D>, begin: number, size: number):
+      Array1D<D> {
     const newVals = x.dataSync().slice(begin, begin + size);
     return Array1D.new(newVals);
   }
 
-  slice2D(x: Array2D, begin: [number, number], size: [number, number]):
-      Array2D {
-    const result = Array2D.zeros(size);
+  slice2D<D extends DataType>(x: Array2D<D>, begin: [number, number], size: [
+    number, number
+  ]): Array2D<D> {
+    const result = Array2D.zeros(size, x.dtype);
     const [startI, startJ] = begin;
 
     for (let i = 0; i < size[0]; ++i) {
@@ -149,10 +150,10 @@ export class MathBackendCPU implements MathBackend {
     return result;
   }
 
-  slice3D(x: Array3D, begin: [number, number, number], size: [
-    number, number, number
-  ]): Array3D {
-    const result = Array3D.zeros(size);
+  slice3D<D extends DataType>(
+      x: Array3D<D>, begin: [number, number, number],
+      size: [number, number, number]): Array3D<D> {
+    const result = Array3D.zeros(size, x.dtype);
     const [startI, startJ, startK] = begin;
 
     for (let i = 0; i < size[0]; ++i) {
@@ -165,10 +166,10 @@ export class MathBackendCPU implements MathBackend {
     }
     return result;
   }
-  slice4D(x: Array4D, begin: [number, number, number, number], size: [
-    number, number, number, number
-  ]): Array4D {
-    const result = Array4D.zeros(size);
+  slice4D<D extends DataType>(
+      x: Array4D<D>, begin: [number, number, number, number],
+      size: [number, number, number, number]): Array4D<D> {
+    const result = Array4D.zeros(size, x.dtype);
     const [startI, startJ, startK, startL] = begin;
 
     for (let i = 0; i < size[0]; ++i) {
@@ -500,6 +501,16 @@ export class MathBackendCPU implements MathBackend {
     });
   }
 
+  less(a: NDArray, b: NDArray): NDArray<'bool'> {
+    return this.broadcastedBinaryOp(a, b, 'bool', (aVal, bVal) => {
+      if (util.isValNaN(aVal, a.dtype) || util.isValNaN(bVal, b.dtype)) {
+        return util.getNaN('bool');
+      } else {
+        return (aVal < bVal) ? 1 : 0;
+      }
+    });
+  }
+
   lessEqual(a: NDArray, b: NDArray): NDArray<'bool'> {
     return this.broadcastedBinaryOp(a, b, 'bool', (aVal, bVal) => {
       if (util.isValNaN(aVal, a.dtype) || util.isValNaN(bVal, b.dtype)) {
@@ -530,6 +541,16 @@ export class MathBackendCPU implements MathBackend {
     });
   }
 
+  logicalAnd(a: NDArray, b: NDArray): NDArray<'bool'> {
+    return this.broadcastedBinaryOp(a, b, 'bool', (aVal, bVal) => {
+      if (util.isValNaN(aVal, a.dtype) || util.isValNaN(bVal, b.dtype)) {
+        return util.getNaN('bool');
+      } else {
+        return aVal && bVal;
+      }
+    });
+  }
+
   logicalOr(a: NDArray, b: NDArray): NDArray<'bool'> {
     return this.broadcastedBinaryOp(a, b, 'bool', (aVal, bVal) => {
       if (util.isValNaN(aVal, a.dtype) || util.isValNaN(bVal, b.dtype)) {
@@ -538,6 +559,27 @@ export class MathBackendCPU implements MathBackend {
         return aVal || bVal;
       }
     });
+  }
+
+  where<D extends DataType>(
+      condition: NDArray, a: NDArray, b: NDArray, dtype: D): NDArray<D> {
+    const values = condition.dataSync();
+    const aValues = a.dataSync();
+    const bValues = b.dataSync();
+    const result = NDArray.zeros(a.shape, dtype);
+    const newValues = result.dataSync();
+    let index = 0;
+    const offset = condition.rank > 1 || a.rank === 1 ? 1 : a.shape[1];
+    for (let i = 0; i < values.length; i++) {
+      for (let j = 0; j < offset; j++) {
+        if (values[i] === 1) {
+          newValues[index++] = aValues[i];
+        } else {
+          newValues[index++] = bValues[i];
+        }
+      }
+    }
+    return result;
   }
 
   topKValues<D extends DataType, T extends NDArray<D>>(x: T, k: number):
@@ -1118,18 +1160,8 @@ export class MathBackendCPU implements MathBackend {
     for (let i = 0; i < newShape.length; i++) {
       newShape[i] = x.shape[i] * reps[i];
     }
-    let dtype;
-    if (x.dtype === 'float32') {
-      dtype = Float32Array;
-    } else if (x.dtype === 'int32') {
-      dtype = Int32Array;
-    } else if (x.dtype === 'bool') {
-      dtype = Uint8Array;
-    } else {
-      throw new Error(`Dtype ${x.dtype} not supported for tile`);
-    }
-    const resultValues = new dtype(util.sizeFromShape(newShape));
-    const result = NDArray.make(newShape, {values: resultValues}, x.dtype) as T;
+    const result = NDArray.zeros(newShape, x.dtype);
+    const newValues = result.dataSync();
     const values = x.dataSync();
     for (let i = 0; i < result.size; ++i) {
       const newLoc = result.indexToLoc(i);
@@ -1141,9 +1173,9 @@ export class MathBackendCPU implements MathBackend {
 
       const originalIndex = x.locToIndex(originalLoc);
 
-      resultValues[i] = values[originalIndex];
+      newValues[i] = values[originalIndex];
     }
-    return result;
+    return result as T;
   }
 
   pad1D(x: Array1D, paddings: [number, number], constantValue: number):
@@ -1151,19 +1183,10 @@ export class MathBackendCPU implements MathBackend {
     const leftPadding = paddings[0];
     const rightPadding = paddings[1];
 
-    let dtype;
-    if (x.dtype === 'float32') {
-      dtype = Float32Array;
-    } else if (x.dtype === 'int32') {
-      dtype = Int32Array;
-    } else if (x.dtype === 'bool') {
-      dtype = Uint8Array;
-    } else {
-      throw new Error(`Dtype ${x.dtype} not supported for tile`);
-    }
-
     const values = x.dataSync();
-    const newValues = new dtype(leftPadding + values.length + rightPadding);
+    const result =
+        Array1D.zeros([leftPadding + values.length + rightPadding], x.dtype);
+    const newValues = result.dataSync();
 
     let z = 0;
     for (let i = 0; i < newValues.length; i++) {
@@ -1173,7 +1196,7 @@ export class MathBackendCPU implements MathBackend {
         newValues[i] = constantValue;
       }
     }
-    return Array1D.new(newValues);
+    return result;
   }
 
   pad2D(
@@ -1184,24 +1207,15 @@ export class MathBackendCPU implements MathBackend {
     const leftPadding = paddings[1][0];
     const rightPadding = paddings[1][1];
 
-    const newShape = [
+    const newShape: [number, number] = [
       topPadding + x.shape[0] + bottomPadding,
       leftPadding + x.shape[1] + rightPadding
     ];
 
-    let dtype;
-    if (x.dtype === 'float32') {
-      dtype = Float32Array;
-    } else if (x.dtype === 'int32') {
-      dtype = Int32Array;
-    } else if (x.dtype === 'bool') {
-      dtype = Uint8Array;
-    } else {
-      throw new Error(`Dtype ${x.dtype} not supported for tile`);
-    }
+    const result = Array2D.zeros(newShape, x.dtype);
+    const newValues = result.dataSync();
 
     const values = x.dataSync();
-    const newValues = new dtype(util.sizeFromShape(newShape));
 
     let z = 0;
     for (let i = 0; i < newShape[0]; i++) {
@@ -1222,7 +1236,7 @@ export class MathBackendCPU implements MathBackend {
         }
       }
     }
-    return Array2D.new(newShape as [number, number], newValues);
+    return result;
   }
 
   transpose<D extends DataType, T extends NDArray<D>>(x: T, perm: number[]): T {
@@ -1249,7 +1263,7 @@ export class MathBackendCPU implements MathBackend {
   }
 
   gather<D extends DataType, T extends NDArray<D>>(
-       x: T, indices: Array1D<'int32'>, axis: number): T {
+      x: T, indices: Array1D<'int32'>, axis: number): T {
     const newShape: number[] = x.shape.slice();
     const indicesValues = indices.dataSync();
     newShape[axis] = indicesValues.length;
