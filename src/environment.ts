@@ -182,10 +182,10 @@ function isWebGLGetBufferSubDataAsyncExtensionEnabled(webGLVersion: number) {
   return isEnabled;
 }
 
-export type BackendType = 'webgl'|'cpu';
+export type BackendType = 'webgl'|'cpu'|'nodejs';
 
 /** List of currently supported backends ordered by preference. */
-const SUPPORTED_BACKENDS: BackendType[] = ['webgl', 'cpu'];
+const SUPPORTED_BACKENDS: BackendType[] = ['webgl', 'cpu', 'nodejs'];
 
 export class Environment {
   private features: Features = {};

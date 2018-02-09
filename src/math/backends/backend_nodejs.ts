@@ -1,10 +1,11 @@
+import {ENV} from '../../environment';
 import {Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D} from '../tensor';
 import {Rank} from '../types';
 
 import {MathBackend} from './backend';
 import {MatrixOrientation} from './types/matmul';
 
-export class MathBackendWebGL implements MathBackend {
+export class MathBackendNodeJS implements MathBackend {
   matMul(
       a: Tensor2D, b: Tensor2D, aOrientation: MatrixOrientation,
       bOrientation: MatrixOrientation): Tensor2D {
@@ -435,3 +436,5 @@ export class MathBackendWebGL implements MathBackend {
     throw new Error('Method not implemented.');
   }
 }
+
+ENV.registerBackend('cpu', () => new MathBackendNodeJS());

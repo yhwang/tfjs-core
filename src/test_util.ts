@@ -282,6 +282,16 @@ export function describeMathGPU(
       featuresList);
 }
 
+export function describeMathNodeJS(
+    name: string, tests: MathTests[], featuresList?: Features[]) {
+  const testNameBase = 'NodeJS: math.' + name;
+  describeWithFeaturesAndExecutor(
+      testNameBase, tests as Tests[],
+      (testName, tests, features) =>
+          executeMathTests(testName, tests, 'nodejs', features),
+      featuresList);
+}
+
 export function describeCustom(
     name: string, tests: Tests, featuresList?: Features[],
     customBeforeEach?: () => void, customAfterEach?: () => void) {
