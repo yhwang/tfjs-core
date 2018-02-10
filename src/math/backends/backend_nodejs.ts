@@ -6,6 +6,13 @@ import {MathBackend} from './backend';
 import {MatrixOrientation} from './types/matmul';
 
 export class MathBackendNodeJS implements MathBackend {
+  constructor() {
+    //
+    // TODO - hold onto a TFE context
+    // TODO - WeakMap from DataId to WhateverFromMyPlugin
+    //
+  }
+
   matMul(
       a: Tensor2D, b: Tensor2D, aOrientation: MatrixOrientation,
       bOrientation: MatrixOrientation): Tensor2D {
@@ -417,21 +424,29 @@ export class MathBackendNodeJS implements MathBackend {
   disposeData(dataId: object): void {
     throw new Error('Method not implemented.');
   }
+
   write(dataId: object, values: Float32Array|Int32Array|Uint8Array): void {
+    //
+    // TODO - kreeger push values to TF handle.
+    //
     throw new Error('Method not implemented.');
   }
+
   fromPixels(
       pixels: ImageData|HTMLImageElement|HTMLCanvasElement|HTMLVideoElement,
       numChannels: number): Tensor3D {
     throw new Error('Method not implemented.');
   }
+
   time(query: () => void): Promise<number> {
     throw new Error('Method not implemented.');
   }
+
   register(dataId: object, shape: number[], dtype: 'float32'|'int32'|'bool'):
       void {
     throw new Error('Method not implemented.');
   }
+
   memory(): {unreliable: boolean;} {
     throw new Error('Method not implemented.');
   }
