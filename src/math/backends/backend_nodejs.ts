@@ -452,4 +452,4 @@ export class MathBackendNodeJS implements MathBackend {
   }
 }
 
-ENV.registerBackend('cpu', () => new MathBackendNodeJS());
+ENV.registerBackend('nodejs', () => new MathBackendNodeJS());

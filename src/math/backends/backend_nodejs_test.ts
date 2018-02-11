@@ -29,4 +29,4 @@ const tests: Tests = () => {
     //
   });
 };
-test_util.describeMathNodeJS('KREEGER', [tests]);
+test_util.describeMathNodeJS('nodejs', [tests]);
