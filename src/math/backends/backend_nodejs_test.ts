@@ -15,11 +15,10 @@
  * =============================================================================
  */
 
-import * as test_util from '../../test_util';
-import {Tests} from '../../test_util';
+import {describeWithFlags, NODEJS_ENVS} from '../../test_util';
 import {MathBackendNodeJS} from './backend_nodejs';
 
-const tests: Tests = () => {
+describeWithFlags('nodejs', NODEJS_ENVS, () => {
   it('Should startup and report the TF version', () => {
     const backend = new MathBackendNodeJS();
     console.log('backend', backend);
@@ -28,5 +27,4 @@ const tests: Tests = () => {
     // TODO(kreeger): write more here.
     //
   });
-};
-test_util.describeMathNodeJS('nodejs', [tests]);
+});

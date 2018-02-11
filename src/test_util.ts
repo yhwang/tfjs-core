@@ -32,6 +32,7 @@ export const WEBGL_ENVS: Features[] = [
   },
 ];
 export const CPU_ENVS: Features[] = [{'BACKEND': 'cpu'}];
+export const NODEJS_ENVS: Features[] = [{'BACKEND': 'nodejs'}];
 export const ALL_ENVS = WEBGL_ENVS.concat(CPU_ENVS);
 
 /** Accuracy for tests. */
