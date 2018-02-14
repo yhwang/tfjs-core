@@ -15,15 +15,34 @@
  * =============================================================================
  */
 
+import * as tfnodejs from 'tfnodejs';
+
 import {ENV} from '../environment';
 import {KernelBackend} from '../kernels/backend';
 // tslint:disable-next-line:max-line-length
-import {Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D} from '../tensor';
+import {DataId, Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D} from '../tensor';
 import {Rank} from '../types';
 
+// import {DTypeCode, TFNodeJS} from './nodejs/tf_node';
+// import {TensorHandle} from './nodejs/tf_node';
 import {MatrixOrientation} from './types/matmul';
 
+// function loadBinding(): TFNodeJS {
+//   // tslint:disable-next-line:no-require-imports
+// }
+
 export class MathBackendNodeJS implements KernelBackend {
+  private tensorMap = new WeakMap<DataId, tfnodejs.TensorHandle>();
+  // private binding: TFNodeJS;
+
+  constructor() {
+    // if (!this.binding) {
+    //   console.log('binding is loaded!');
+    // } else {
+    //   console.log('Could not load binding...');
+    // }
+  }
+
   matMul(
       a: Tensor2D, b: Tensor2D, aOrientation: MatrixOrientation,
       bOrientation: MatrixOrientation): Tensor2D {
@@ -436,7 +455,27 @@ export class MathBackendNodeJS implements KernelBackend {
   }
   register(dataId: object, shape: number[], dtype: 'float32'|'int32'|'bool'):
       void {
-    throw new Error('Method not implemented.');
+    if (this.tensorMap.has(dataId)) {
+      console.log('Tensor already regsitered.');
+    }
+
+    let tfDtype: number;
+    switch (dtype) {
+      case 'float32':
+        tfDtype = tfnodejs.TF_FLOAT;
+        break;
+      case 'int32':
+        tfDtype = tfnodejs.TF_INT32;
+        break;
+      case 'bool':
+        tfDtype = tfnodejs.TF_BOOL;
+        break;
+      default:
+        console.log('unknown');
+    }
+
+    this.tensorMap.set(dataId, new tfnodejs.TensorHandle(shape, tfDtype));
+    console.log('registered!');
   }
   memory(): {unreliable: boolean;} {
     throw new Error('Method not implemented.');
