@@ -15,7 +15,7 @@
  * =============================================================================
  */
 
-import * as tfnodejs from 'tfnodejs';
+import {TensorHandle, TF_BOOL, TF_FLOAT, TF_INT32} from 'tfnodejs';
 
 import {ENV} from '../environment';
 import {KernelBackend} from '../kernels/backend';
@@ -27,21 +27,10 @@ import {Rank} from '../types';
 // import {TensorHandle} from './nodejs/tf_node';
 import {MatrixOrientation} from './types/matmul';
 
-// function loadBinding(): TFNodeJS {
-//   // tslint:disable-next-line:no-require-imports
-// }
-
 export class MathBackendNodeJS implements KernelBackend {
-  private tensorMap = new WeakMap<DataId, tfnodejs.TensorHandle>();
-  // private binding: TFNodeJS;
+  private tensorMap = new WeakMap<DataId, TensorHandle>();
 
-  constructor() {
-    // if (!this.binding) {
-    //   console.log('binding is loaded!');
-    // } else {
-    //   console.log('Could not load binding...');
-    // }
-  }
+  constructor() {}
 
   matMul(
       a: Tensor2D, b: Tensor2D, aOrientation: MatrixOrientation,
@@ -462,19 +451,19 @@ export class MathBackendNodeJS implements KernelBackend {
     let tfDtype: number;
     switch (dtype) {
       case 'float32':
-        tfDtype = tfnodejs.TF_FLOAT;
+        tfDtype = TF_FLOAT;  // symbols not working...
         break;
       case 'int32':
-        tfDtype = tfnodejs.TF_INT32;
+        tfDtype = TF_INT32;
         break;
       case 'bool':
-        tfDtype = tfnodejs.TF_BOOL;
+        tfDtype = TF_BOOL;
         break;
       default:
         console.log('unknown');
     }
 
-    this.tensorMap.set(dataId, new tfnodejs.TensorHandle(shape, tfDtype));
+    this.tensorMap.set(dataId, new TensorHandle(shape, tfDtype));
     console.log('registered!');
   }
   memory(): {unreliable: boolean;} {

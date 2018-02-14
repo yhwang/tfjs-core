@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "seedrandom": "~2.4.3",
+    "tfnodejs": "../tf-nodejs/",
     "utf8": "~2.1.2"
   }
 }
