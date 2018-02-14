@@ -15,7 +15,7 @@
  * =============================================================================
  */
 
-import {describeWithFlags, NODEJS_ENVS} from '../../test_util';
+import {describeWithFlags, NODEJS_ENVS} from '../test_util';
 import {MathBackendNodeJS} from './backend_nodejs';
 
 describeWithFlags('nodejs', NODEJS_ENVS, () => {

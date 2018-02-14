@@ -1,18 +1,29 @@
-import {ENV} from '../../environment';
+/**
+ * @license
+ * Copyright 2018 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================================
+ */
+
+import {ENV} from '../environment';
+import {KernelBackend} from '../kernels/backend';
+// tslint:disable-next-line:max-line-length
 import {Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D} from '../tensor';
 import {Rank} from '../types';
 
-import {MathBackend} from './backend';
 import {MatrixOrientation} from './types/matmul';
 
-export class MathBackendNodeJS implements MathBackend {
-  constructor() {
-    //
-    // TODO - hold onto a TFE context
-    // TODO - WeakMap from DataId to WhateverFromMyPlugin
-    //
-  }
-
+export class MathBackendNodeJS implements KernelBackend {
   matMul(
       a: Tensor2D, b: Tensor2D, aOrientation: MatrixOrientation,
       bOrientation: MatrixOrientation): Tensor2D {
@@ -381,18 +392,6 @@ export class MathBackendNodeJS implements MathBackend {
       alignCorners: boolean): Tensor4D {
     throw new Error('Method not implemented.');
   }
-  batchNormalization2D(
-      x: Tensor2D, mean: Tensor2D|Tensor1D, variance: Tensor2D|Tensor1D,
-      varianceEpsilon: number, scale?: Tensor2D|Tensor1D,
-      offset?: Tensor2D|Tensor1D): Tensor2D {
-    throw new Error('Method not implemented.');
-  }
-  batchNormalization3D(
-      x: Tensor3D, mean: Tensor1D|Tensor3D, variance: Tensor1D|Tensor3D,
-      varianceEpsilon: number, scale?: Tensor1D|Tensor3D,
-      offset?: Tensor1D|Tensor3D): Tensor3D {
-    throw new Error('Method not implemented.');
-  }
   batchNormalization4D(
       x: Tensor4D, mean: Tensor1D|Tensor4D, variance: Tensor1D|Tensor4D,
       varianceEpsilon: number, scale?: Tensor1D|Tensor4D,
@@ -424,29 +423,21 @@ export class MathBackendNodeJS implements MathBackend {
   disposeData(dataId: object): void {
     throw new Error('Method not implemented.');
   }
-
   write(dataId: object, values: Float32Array|Int32Array|Uint8Array): void {
-    //
-    // TODO - kreeger push values to TF handle.
-    //
     throw new Error('Method not implemented.');
   }
-
   fromPixels(
       pixels: ImageData|HTMLImageElement|HTMLCanvasElement|HTMLVideoElement,
       numChannels: number): Tensor3D {
     throw new Error('Method not implemented.');
   }
-
   time(query: () => void): Promise<number> {
     throw new Error('Method not implemented.');
   }
-
   register(dataId: object, shape: number[], dtype: 'float32'|'int32'|'bool'):
       void {
     throw new Error('Method not implemented.');
   }
-
   memory(): {unreliable: boolean;} {
     throw new Error('Method not implemented.');
   }
