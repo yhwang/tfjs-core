@@ -46,6 +46,7 @@
     "prep": "yarn && mkdirp dist && yarn build && cd demos/ && yarn prep && cd ..",
     "build": "tsc",
     "test": "karma start",
+    "binding-test": "./node_modules/.bin/ts-node src/tf_nodejs_test.ts",
     "test-travis": "karma start --browsers='bs_firefox_mac,bs_chrome_mac' --singleRun",
     "lint": "tslint -p . -t verbose",
     "make-version": "sh -c ./scripts/make-version"

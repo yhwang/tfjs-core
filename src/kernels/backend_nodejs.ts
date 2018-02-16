@@ -85,6 +85,9 @@ export class MathBackendNodeJS implements KernelBackend {
     throw new Error('Method not implemented.');
   }
   equal(a: Tensor<Rank>, b: Tensor<Rank>): Tensor<Rank> {
+    //
+    // TODO(kreeger): write me.
+    //
     throw new Error('Method not implemented.');
   }
   notEqual(a: Tensor<Rank>, b: Tensor<Rank>): Tensor<Rank> {
@@ -432,7 +435,10 @@ export class MathBackendNodeJS implements KernelBackend {
     throw new Error('Method not implemented.');
   }
   write(dataId: object, values: Float32Array|Int32Array|Uint8Array): void {
-    throw new Error('Method not implemented.');
+    const tensor = this.tensorMap.get(dataId);
+    tensor.bindBuffer(values);
+
+    console.log('wrote!');
   }
   fromPixels(
       pixels: ImageData|HTMLImageElement|HTMLCanvasElement|HTMLVideoElement,
