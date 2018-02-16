@@ -15,7 +15,7 @@
  * =============================================================================
  */
 
-import {TensorHandle, TF_BOOL, TF_FLOAT, TF_INT32} from 'tfnodejs';
+import {Context, execute, TensorHandle, TF_BOOL, TF_FLOAT, TF_INT32} from 'tfnodejs';
 
 import {ENV} from '../environment';
 import {KernelBackend} from '../kernels/backend';
@@ -88,6 +88,7 @@ export class MathBackendNodeJS implements KernelBackend {
     //
     // TODO(kreeger): write me.
     //
+    // execute(new Context(), 'Equal', [a, b]);
     throw new Error('Method not implemented.');
   }
   notEqual(a: Tensor<Rank>, b: Tensor<Rank>): Tensor<Rank> {
@@ -429,7 +430,7 @@ export class MathBackendNodeJS implements KernelBackend {
     throw new Error('Method not implemented.');
   }
   readSync(dataId: object): Float32Array|Int32Array|Uint8Array {
-    throw new Error('Method not implemented.');
+    return this.tensorMap.get(dataId).data();
   }
   disposeData(dataId: object): void {
     throw new Error('Method not implemented.');
@@ -437,8 +438,6 @@ export class MathBackendNodeJS implements KernelBackend {
   write(dataId: object, values: Float32Array|Int32Array|Uint8Array): void {
     const tensor = this.tensorMap.get(dataId);
     tensor.bindBuffer(values);
-
-    console.log('wrote!');
   }
   fromPixels(
       pixels: ImageData|HTMLImageElement|HTMLCanvasElement|HTMLVideoElement,
@@ -470,7 +469,6 @@ export class MathBackendNodeJS implements KernelBackend {
     }
 
     this.tensorMap.set(dataId, new TensorHandle(shape, tfDtype));
-    console.log('registered!');
   }
   memory(): {unreliable: boolean;} {
     throw new Error('Method not implemented.');
