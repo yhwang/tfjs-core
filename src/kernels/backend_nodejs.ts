@@ -36,7 +36,16 @@ export class MathBackendNodeJS implements KernelBackend {
   matMul(
       a: Tensor2D, b: Tensor2D, aOrientation: MatrixOrientation,
       bOrientation: MatrixOrientation): Tensor2D {
-    throw new Error('Method not implemented.');
+    const aHandle = this.tensorMap.get(a.dataId);
+    const bHandle = this.tensorMap.get(b.dataId);
+    const v = execute(new Context(), 'MatMul', [aHandle, bHandle]);
+    console.log('v', typeof (v));
+
+    //
+    // TODO(kreeger): Need to write a Tensor<>() Wrapper...
+    //
+
+    return v;
   }
   slice1D(x: Tensor1D, begin: number, size: number): Tensor1D {
     throw new Error('Method not implemented.');
