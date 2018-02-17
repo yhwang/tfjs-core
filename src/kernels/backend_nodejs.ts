@@ -15,6 +15,7 @@
  * =============================================================================
  */
 
+// tslint:disable-next-line:max-line-length
 import {Context, execute, TensorHandle, TF_BOOL, TF_FLOAT, TF_INT32} from 'tfnodejs';
 
 import {ENV} from '../environment';
@@ -85,11 +86,16 @@ export class MathBackendNodeJS implements KernelBackend {
     throw new Error('Method not implemented.');
   }
   equal(a: Tensor<Rank>, b: Tensor<Rank>): Tensor<Rank> {
+    const aHandle = this.tensorMap.get(a.dataId);
+    const bHandle = this.tensorMap.get(b.dataId);
+    const v = execute(new Context(), 'Equal', [aHandle, bHandle]);
+    console.log('v', typeof (v));
+
     //
-    // TODO(kreeger): write me.
+    // TODO(kreeger): Need to write a Tensor<>() Wrapper...
     //
-    // execute(new Context(), 'Equal', [a, b]);
-    throw new Error('Method not implemented.');
+
+    return v;
   }
   notEqual(a: Tensor<Rank>, b: Tensor<Rank>): Tensor<Rank> {
     throw new Error('Method not implemented.');
@@ -433,7 +439,8 @@ export class MathBackendNodeJS implements KernelBackend {
     return this.tensorMap.get(dataId).data();
   }
   disposeData(dataId: object): void {
-    throw new Error('Method not implemented.');
+    // TODO write me.
+    // throw new Error('Method not implemented.');
   }
   write(dataId: object, values: Float32Array|Int32Array|Uint8Array): void {
     const tensor = this.tensorMap.get(dataId);
