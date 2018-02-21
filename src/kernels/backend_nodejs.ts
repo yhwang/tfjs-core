@@ -406,7 +406,7 @@ export class MathBackendNodeJS implements KernelBackend {
   pad2D(
       x: Tensor2D, paddings: [[number, number], [number, number]],
       constantValue: number): Tensor2D {
-    // hard coded to float for now...
+    // TODO - pass in the actual type of X
     const opAttrs = [
       {name: 'T', type: TF_ATTR_TYPE, value: TF_FLOAT},
       {name: 'Tpaddings', type: TF_ATTR_TYPE, value: TF_INT32}
