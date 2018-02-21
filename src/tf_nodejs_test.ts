@@ -9,6 +9,6 @@ console.log('t1', t1.dataSync());
 console.log('t2', t2.dataSync());
 
 const result = ENV.math.matMul(t1, t2);
-console.log('matmul: ', result.data());
+console.log('matmul: ', result.dataSync());
 
 ENV.engine.endScope(null);

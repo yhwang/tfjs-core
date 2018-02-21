@@ -16,13 +16,13 @@
  */
 
 // tslint:disable-next-line:max-line-length
-import {Context, execute, TensorHandle, TF_ATTR_BOOL, TF_ATTR_TYPE, TF_BOOL, TF_FLOAT, TF_INT32, TFEOpAttr} from 'tfnodejs';
+import {Context, execute, TensorHandle, TF_ATTR_BOOL, TF_ATTR_TYPE, TF_BOOL, TF_FLOAT, TF_INT32} from 'tfnodejs';
 
 import {ENV} from '../environment';
 import {KernelBackend} from '../kernels/backend';
 // tslint:disable-next-line:max-line-length
 import {DataId, Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D} from '../tensor';
-import {Rank} from '../types';
+import {DataType, Rank} from '../types';
 
 // import {DTypeCode, TFNodeJS} from './nodejs/tf_node';
 // import {TensorHandle} from './nodejs/tf_node';
@@ -30,28 +30,31 @@ import {MatrixOrientation} from './types/matmul';
 
 export class MathBackendNodeJS implements KernelBackend {
   private tensorMap = new WeakMap<DataId, TensorHandle>();
+  private context: Context;
 
-  constructor() {}
+  constructor() {
+    this.context = new Context();
+  }
+
+  private makeOutputArray<T extends Tensor>(shape: number[], dtype: DataType):
+      T {
+    return Tensor.make(shape, {}, dtype) as T;
+  }
 
   matMul(
       a: Tensor2D, b: Tensor2D, aOrientation: MatrixOrientation,
       bOrientation: MatrixOrientation): Tensor2D {
-    const aHandle = this.tensorMap.get(a.dataId);
-    const bHandle = this.tensorMap.get(b.dataId);
     const opAttrs = [
       {name: 'transpose_a', type: TF_ATTR_BOOL, value: false},
       {name: 'transpose_b', type: TF_ATTR_BOOL, value: false},
       {name: 'T', type: TF_ATTR_TYPE, value: TF_FLOAT}
     ];
-    const v = execute(new Context(), 'MatMul', opAttrs, [aHandle, bHandle]);
-    console.log('v', typeof (v));
-
-    //
-    // TODO(kreeger): Need to write a Tensor<>() Wrapper...
-    //
-
-    // return null;
-    return v;
+    const output = this.makeOutputArray(a.shape, a.dtype);
+    execute(
+        this.context, 'MatMul', opAttrs,
+        [this.tensorMap.get(a.dataId), this.tensorMap.get(b.dataId)],
+        this.tensorMap.get(output.dataId));
+    return output as Tensor2D;
   }
   slice1D(x: Tensor1D, begin: number, size: number): Tensor1D {
     throw new Error('Method not implemented.');
@@ -101,17 +104,7 @@ export class MathBackendNodeJS implements KernelBackend {
     throw new Error('Method not implemented.');
   }
   equal(a: Tensor<Rank>, b: Tensor<Rank>): Tensor<Rank> {
-    const aHandle = this.tensorMap.get(a.dataId);
-    const bHandle = this.tensorMap.get(b.dataId);
-    const v = execute(new Context(), 'Equal', [aHandle, bHandle]);
-    console.log('v', typeof (v));
-
-    //
-    // TODO(kreeger): Need to write a Tensor<>() Wrapper...
-    //
-
-    return null;
-    // return v;
+    throw new Error('Method not implemented.');
   }
   notEqual(a: Tensor<Rank>, b: Tensor<Rank>): Tensor<Rank> {
     throw new Error('Method not implemented.');
@@ -448,8 +441,8 @@ export class MathBackendNodeJS implements KernelBackend {
   dispose(): void {
     throw new Error('Method not implemented.');
   }
-  read(dataId: object): Promise<Float32Array|Int32Array|Uint8Array> {
-    throw new Error('Method not implemented.');
+  async read(dataId: object): Promise<Float32Array|Int32Array|Uint8Array> {
+    return this.tensorMap.get(dataId).data();
   }
   readSync(dataId: object): Float32Array|Int32Array|Uint8Array {
     return this.tensorMap.get(dataId).data();
