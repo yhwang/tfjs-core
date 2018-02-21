@@ -424,7 +424,7 @@ export class MathBackendNodeJS implements KernelBackend {
 
     // Bind tensor values
     const paddingsTensor = Tensor2D.new([2, 2], paddings, 'int32');
-    const constantTensor = Scalar.new(constantValue, 'float32');
+    const constantTensor = Scalar.new(constantValue, x.dtype);
 
     // Different size:
     const output = this.makeOutputArray(newShape, x.dtype);
