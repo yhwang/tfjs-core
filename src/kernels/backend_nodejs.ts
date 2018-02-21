@@ -16,7 +16,7 @@
  */
 
 // tslint:disable-next-line:max-line-length
-import {Context, execute, TensorHandle, TF_ATTR_BOOL, TF_BOOL, TF_FLOAT, TF_INT32, TFEOpAttr} from 'tfnodejs';
+import {Context, execute, TensorHandle, TF_ATTR_BOOL, TF_ATTR_TYPE, TF_BOOL, TF_FLOAT, TF_INT32, TFEOpAttr} from 'tfnodejs';
 
 import {ENV} from '../environment';
 import {KernelBackend} from '../kernels/backend';
@@ -38,7 +38,11 @@ export class MathBackendNodeJS implements KernelBackend {
       bOrientation: MatrixOrientation): Tensor2D {
     const aHandle = this.tensorMap.get(a.dataId);
     const bHandle = this.tensorMap.get(b.dataId);
-    const opAttrs = [{name: 'transpose_a', type: TF_ATTR_BOOL, value: false}];
+    const opAttrs = [
+      {name: 'transpose_a', type: TF_ATTR_BOOL, value: false},
+      {name: 'transpose_b', type: TF_ATTR_BOOL, value: false},
+      {name: 'T', type: TF_ATTR_TYPE, value: TF_FLOAT}
+    ];
     const v = execute(new Context(), 'MatMul', opAttrs, [aHandle, bHandle]);
     console.log('v', typeof (v));
 
@@ -46,8 +50,8 @@ export class MathBackendNodeJS implements KernelBackend {
     // TODO(kreeger): Need to write a Tensor<>() Wrapper...
     //
 
-    return null;
-    // return v;
+    // return null;
+    return v;
   }
   slice1D(x: Tensor1D, begin: number, size: number): Tensor1D {
     throw new Error('Method not implemented.');
