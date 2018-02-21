@@ -16,12 +16,12 @@
  */
 
 // tslint:disable-next-line:max-line-length
-import {Context, execute, TensorHandle, TF_ATTR_BOOL, TF_ATTR_TYPE, TF_BOOL, TF_FLOAT, TF_INT32} from 'tfnodejs';
+import {Context, execute, TensorHandle, TF_ATTR_BOOL, TF_ATTR_TYPE, TF_BOOL, TF_FLOAT, TF_INT32, TFEOpAttr} from 'tfnodejs';
 
 import {ENV} from '../environment';
 import {KernelBackend} from '../kernels/backend';
 // tslint:disable-next-line:max-line-length
-import {DataId, Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D} from '../tensor';
+import {DataId, Scalar, Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D} from '../tensor';
 import {DataType, Rank} from '../types';
 
 // import {DTypeCode, TFNodeJS} from './nodejs/tf_node';
@@ -406,7 +406,37 @@ export class MathBackendNodeJS implements KernelBackend {
   pad2D(
       x: Tensor2D, paddings: [[number, number], [number, number]],
       constantValue: number): Tensor2D {
-    throw new Error('Method not implemented.');
+    // hard coded to float for now...
+    const opAttrs = [
+      {name: 'T', type: TF_ATTR_TYPE, value: TF_FLOAT},
+      {name: 'Tpaddings', type: TF_ATTR_TYPE, value: TF_INT32}
+    ];
+
+    const topPadding = paddings[0][0];
+    const bottomPadding = paddings[0][1];
+    const leftPadding = paddings[1][0];
+    const rightPadding = paddings[1][1];
+
+    const newShape: [number, number] = [
+      topPadding + x.shape[0] + bottomPadding,
+      leftPadding + x.shape[1] + rightPadding
+    ];
+
+    // Bind tensor values
+    const paddingsTensor = Tensor2D.new([2, 2], paddings, 'int32');
+    const constantTensor = Scalar.new(constantValue, 'float32');
+
+    // Different size:
+    const output = this.makeOutputArray(newShape, x.dtype);
+    execute(
+        this.context, 'PadV2', opAttrs,
+        [
+          this.tensorMap.get(x.dataId),
+          this.tensorMap.get(paddingsTensor.dataId),
+          this.tensorMap.get(constantTensor.dataId)
+        ],
+        this.tensorMap.get(output.dataId));
+    return output as Tensor2D;
   }
   transpose<T extends Tensor<Rank>>(x: T, perm: number[]): T {
     throw new Error('Method not implemented.');

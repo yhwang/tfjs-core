@@ -9,6 +9,8 @@ console.log('t1', t1.dataSync());
 console.log('t2', t2.dataSync());
 
 const result = ENV.math.matMul(t1, t2);
+const padded = ENV.math.pad2D(result, [[1, 1], [1, 1]]);
 console.log('matmul: ', result.dataSync());
+console.log('padded: ', padded.dataSync());
 
 ENV.engine.endScope(null);
