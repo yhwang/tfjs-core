@@ -16,7 +16,7 @@
  */
 
 // tslint:disable-next-line:max-line-length
-import {Context, execute, TensorHandle, TF_ATTR_BOOL, TF_ATTR_TYPE, TF_BOOL, TF_FLOAT, TF_INT32, TFEOpAttr} from 'tfnodejs';
+import {Context, execute, TensorHandle, TF_ATTR_BOOL, TF_ATTR_TYPE, TF_BOOL, TF_FLOAT, TF_INT32} from 'tfnodejs';
 
 import {ENV} from '../environment';
 import {KernelBackend} from '../kernels/backend';
