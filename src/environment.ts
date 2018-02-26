@@ -223,7 +223,6 @@ export class Environment {
    */
   @doc({heading: 'Environment'})
   static setBackend(backendType: BackendType, safeMode = false) {
-    console.log('ENV.backends', ENV.backends);
     if (!(backendType in ENV.backends)) {
       throw new Error(`Backend type '${backendType}' not found in registry`);
     }
