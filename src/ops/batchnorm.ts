@@ -23,7 +23,7 @@ import * as util from '../util';
 
 import {operation} from './operation';
 
-export class Ops {
+export class BatchNormOps {
   /**
    * Batch normalization, strictly for 2D. For the more relaxed version, see
    * `batchNormalization`.
@@ -35,7 +35,6 @@ export class Ops {
    * @param scale A scale Tensor.
    * @param offset An offset Tensor.
    */
-  @doc({heading: 'Operations', subheading: 'Normalization'})
   @operation
   static batchNormalization2d(
       x: Tensor2D, mean: Tensor2D|Tensor1D, variance: Tensor2D|Tensor1D,
@@ -66,7 +65,7 @@ export class Ops {
               `but got rank ${offset.rank}.`);
     }
 
-    return Ops.batchNormalization(
+    return BatchNormOps.batchNormalization(
         x, mean, variance, varianceEpsilon, scale, offset);
   }
 
@@ -81,7 +80,6 @@ export class Ops {
    * @param scale A scale Tensor.
    * @param offset An offset Tensor.
    */
-  @doc({heading: 'Operations', subheading: 'Normalization'})
   @operation
   static batchNormalization3d(
       x: Tensor3D, mean: Tensor3D|Tensor1D, variance: Tensor3D|Tensor1D,
@@ -112,7 +110,7 @@ export class Ops {
               `but got rank ${offset.rank}.`);
     }
 
-    return Ops.batchNormalization(
+    return BatchNormOps.batchNormalization(
         x, mean, variance, varianceEpsilon, scale, offset);
   }
 
@@ -127,7 +125,6 @@ export class Ops {
    * @param scale A scale Tensor.
    * @param offset An offset Tensor.
    */
-  @doc({heading: 'Operations', subheading: 'Normalization'})
   @operation
   static batchNormalization4d(
       x: Tensor4D, mean: Tensor4D|Tensor1D, variance: Tensor4D|Tensor1D,
@@ -157,7 +154,7 @@ export class Ops {
           `Error in batchNormalization4D: offset must be rank 4 or rank 1 ` +
               `but got rank ${offset.rank}.`);
     }
-    return Ops.batchNormalization(
+    return BatchNormOps.batchNormalization(
         x, mean, variance, varianceEpsilon, scale, offset);
   }
 
@@ -171,7 +168,7 @@ export class Ops {
    * shapes:
    *   - The same shape as the input.
    *   - In the common case, the depth dimension is the last dimension of x, so
-   *     the values would be an Tensor1D of shape [depth].
+   *     the values would be an `Tensor1D` of shape [depth].
    *
    * @param x The input Tensor.
    * @param mean A mean Tensor.
@@ -196,18 +193,13 @@ export class Ops {
       x4D = x as Tensor4D;
     }
 
-    return ENV.engine
-               .executeKernel('BatchNorm4D', {
-                 inputs: {
-                   x: x4D,
-                   mean: batchnormReshape4D(mean),
-                   variance: batchnormReshape4D(variance),
-                   scale: batchnormReshape4D(scale),
-                   offset: batchnormReshape4D(offset)
-                 },
-                 args: {varianceEpsilon}
-               })
-               .reshape(x.shape) as Tensor<R>;
+    const res = ENV.engine.runKernel(
+        backend => backend.batchNormalization4D(
+            x4D, batchnormReshape4D(mean), batchnormReshape4D(variance),
+            varianceEpsilon, batchnormReshape4D(scale),
+            batchnormReshape4D(offset)),
+        {x, mean, variance});
+    return res.reshape(x.shape);
   }
 }
 

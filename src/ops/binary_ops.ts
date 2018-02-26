@@ -24,12 +24,27 @@ import * as broadcast_util from './broadcast_util';
 import {operation} from './operation';
 import {scalar} from './ops';
 
-export class Ops {
+export class BinaryOps {
   /**
-   * Adds two Tensors element-wise, A + B. Supports broadcasting.
+   * Adds two `Tensor`s element-wise, A + B. Supports broadcasting.
    *
    * We also expose `addStrict` which has the same signature as this op and
    * asserts that `a` and `b` are the same shape (does not broadcast).
+   *
+   * ```js
+   * const a = dl.tensor1d([1, 2, 3, 4]);
+   * const b = dl.tensor1d([10, 20, 30, 40]);
+   *
+   * a.add(b).print();  // or dl.add(a, b)
+   * ```
+   *
+   * ```js
+   * // Broadcast add a with b.
+   * const a = dl.scalar(5);
+   * const b = dl.tensor1d([10, 20, 30, 40]);
+   *
+   * a.add(b).print();  // or dl.add(a, b)
+   * ```
    * @param a The first `Tensor` to add.
    * @param b The second `Tensor` to add. Must have the same type as `a`.
    */
@@ -40,7 +55,7 @@ export class Ops {
     const outShape =
         broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
 
-    const der = (dy: Tensor, y: Tensor) => {
+    const der = (dy: Tensor) => {
       const derA = () => {
         let res = dy;
         const reduceAxes = broadcast_util.getReductionAxes(a.shape, outShape);
@@ -59,16 +74,16 @@ export class Ops {
       };
       return {a: derA, b: derB};
     };
-    return ENV.engine.executeKernel('Add', {inputs: {a, b}}, der) as T;
+    return ENV.engine.runKernel(backend => backend.add(a, b), {a, b}, der) as T;
   }
 
   /**
-   * Adds two Tensors element-wise, A + B.
+   * Adds two `Tensor`s element-wise, A + B.
    *
    * Inputs must be the same shape. For broadcasting support, use add() instead.
    *
-   * @param a The first Tensor to multiply element-wise.
-   * @param b The second Tensor to multiply element-wise.
+   * @param a The first Tensor to add element-wise.
+   * @param b The second Tensor to add element-wise.
    */
   @operation
   static addStrict<T extends Tensor>(a: T, b: T): T {
@@ -77,13 +92,28 @@ export class Ops {
   }
 
   /**
-   * Subtracts two Tensors element-wise, A - B. Supports broadcasting.
+   * Subtracts two `Tensor`s element-wise, A - B. Supports broadcasting.
    *
    * We also expose `subStrict` which has the same signature as this op and
    * asserts that `a` and `b` are the same shape (does not broadcast).
    *
-   * @param a The first `Tensor`.
-   * @param b The second `Tensor`. Must have the same dtype as `a`.
+   * ```js
+   * const a = dl.tensor1d([10, 20, 30, 40]);
+   * const b = dl.tensor1d([1, 2, 3, 4]);
+   *
+   * a.sub(b).print();  // or dl.sub(a, b)
+   * ```
+   *
+   * ```js
+   * // Broadcast subtract a with b.
+   * const a = dl.tensor1d([10, 20, 30, 40]);
+   * const b = dl.scalar(5);
+   *
+   * a.sub(b).print();  // or dl.sub(a, b)
+   * ```
+   * @param a The first `Tensor` to subtract from.
+   * @param b The second `Tensor` to be subtracted. Must have the same dtype as
+   * `a`.
    */
   @doc({heading: 'Operations', subheading: 'Arithmetic'})
   @operation
@@ -92,7 +122,7 @@ export class Ops {
     const outShape =
         broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
 
-    const der = (dy: Tensor, y: Tensor) => {
+    const der = (dy: Tensor) => {
       const derA = () => {
         let res = dy;
         const reduceAxes = broadcast_util.getReductionAxes(a.shape, outShape);
@@ -111,17 +141,18 @@ export class Ops {
       };
       return {a: derA, b: derB};
     };
-    return ENV.engine.executeKernel('Sub', {inputs: {a, b}}, der) as T;
+    return ENV.engine.runKernel(
+               backend => backend.subtract(a, b), {a, b}, der) as T;
   }
 
   /**
-   * Subtracts two Tensors element-wise, A - B. Inputs must
+   * Subtracts two `Tensor`s element-wise, A - B. Inputs must
    * be the same shape.
    *
    * For broadcasting support, use sub() instead.
    *
-   * @param a The first Tensor to multiply element-wise.
-   * @param b The second Tensor to multiply element-wise.
+   * @param a The first Tensor to subtract element-wise.
+   * @param b The second Tensor to subtract element-wise.
    */
   @operation
   static subStrict<T extends Tensor>(a: T, b: T): T {
@@ -130,17 +161,24 @@ export class Ops {
   }
 
   /**
-   * Computes the power of one value to another. Supports broadcasting.
-   * Given a tensor x and a tensor y, this operation computes x^y for
+   * Computes the power of one `Tensor` to another. Supports broadcasting.
+   *
+   * Given a `Tensor` x and a `Tensor` y, this operation computes x^y for
    * corresponding elements in x and y.
    *
-   * For example:
    * ```js
-   * const a = dl.tensor([[2, 2], [3, 3]])
-   * const b = dl.tensor([[8, 16], [2, 3]])
-   * const y = dl.pow(a, b);  // [256, 65536, 9, 27]
+   * const a = dl.tensor([[2, 3], [4, 5]])
+   * const b = dl.tensor([[1, 2], [3, 0]]).toInt();
+   *
+   * a.pow(b).print();  // or dl.pow(a, b)
    * ```
    *
+   * ```js
+   * const a = dl.tensor([[1, 2], [3, 4]])
+   * const b = dl.tensor(2).toInt();
+   *
+   * a.pow(b).print();  // or dl.pow(a, b)
+   * ```
    * We also expose `powStrict` which has the same signature as this op and
    * asserts that `base` and `exp` are the same shape (does not broadcast).
    *
@@ -149,40 +187,37 @@ export class Ops {
    */
   @doc({heading: 'Operations', subheading: 'Arithmetic'})
   @operation
-  static pow<T extends Tensor>(base: Tensor, exp: Tensor): T {
+  static pow<T extends Tensor>(base: T, exp: Tensor): T {
     util.assert(
         exp.dtype === 'int32',
         'only supports int32 data type for the exponent parameter.');
     broadcast_util.assertAndGetBroadcastShape(base.shape, exp.shape);
 
-    const gradient = (dy: Tensor, y: Tensor) => {
-      if (!util.arraysEqual(base.shape, exp.shape)) {
+    const grad = (dy: Tensor) => {
+      if (!util.arraysEqual(base.shape, exp.shape) &&
+          !util.isScalarShape(exp.shape)) {
         throw new Error(
             `Gradient of pow not yet supported for broadcasted shapes.`);
       }
       const derBase = () => {
-        const dx =
-            exp.toFloat().mul(base.pow(exp.sub(scalar(1, 'int32'))).toFloat());
-        return dy.mul(dx);
+        const dx = exp.toFloat().mul(
+                       base.pow(exp.sub(scalar(1, 'int32'))).toFloat()) as T;
+        return dy.mulStrict(dx) as T;
       };
-      const derExp = () => {
-        throw new Error(`Backprop through exponent not implemented yet.`);
-      };
-      return {base: derBase, exp: derExp};
+      return {base: derBase};
     };
-
-    return ENV.engine.executeKernel('Pow', {inputs: {base, exp}}, gradient) as
-        T;
+    return ENV.engine.runKernel(
+               backend => backend.pow(base, exp), {base}, grad) as T;
   }
 
   /**
-   * Computes the power of one value to another. Inputs must
+   * Computes the power of one `Tensor` to another. Inputs must
    * be the same shape.
    *
    * For broadcasting support, use pow() instead.
    *
-   * @param base The base Tensor to pow element-wise.
-   * @param exp The exponent Tensor to pow element-wise.
+   * @param base The base tensor to pow element-wise.
+   * @param exp The exponent tensor to pow element-wise.
    */
   @operation
   static powStrict<T extends Tensor>(base: T, exp: Tensor): T {
@@ -191,13 +226,27 @@ export class Ops {
   }
 
   /**
-   * Multiplies two Tensors element-wise, A * B. Supports broadcasting.
+   * Multiplies two `Tensor`s element-wise, A * B. Supports broadcasting.
    *
    * We also expose `mulStrict` which has the same signature as this op and
    * asserts that `a` and `b` are the same shape (does not broadcast).
    *
-   * @param a The first `Tensor`.
-   * @param b The second `Tensor`. Must have the same dtype as `a`.
+   * ```js
+   * const a = dl.tensor1d([1, 2, 3, 4]);
+   * const b = dl.tensor1d([2, 3, 4, 5]);
+   *
+   * a.mul(b).print();  // or dl.mul(a, b)
+   * ```
+   *
+   * ```js
+   * // Broadcast mul a with b.
+   * const a = dl.tensor1d([1, 2, 3, 4]);
+   * const b = dl.scalar(5);
+   *
+   * a.mul(b).print();  // or dl.mul(a, b)
+   * ```
+   * @param a The first tensor to multiply.
+   * @param b The second tensor to multiply. Must have the same dtype as `a`.
    */
   @doc({heading: 'Operations', subheading: 'Arithmetic'})
   @operation
@@ -206,7 +255,7 @@ export class Ops {
     const outShape =
         broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
 
-    const der = (dy: Tensor, y: Tensor) => {
+    const der = (dy: Tensor) => {
       const derA = () => {
         const res = dy.mul(b.toFloat());
         const reduceAxes = broadcast_util.getReductionAxes(a.shape, outShape);
@@ -225,16 +274,18 @@ export class Ops {
       };
       return {a: derA, b: derB};
     };
-    return ENV.engine.executeKernel('Mul', {inputs: {a, b}}, der) as T;
+    return ENV.engine.runKernel(
+               backend => backend.multiply(a, b), {a, b}, der) as T;
   }
 
   /**
-   * Multiplies two Tensors element-wise, A * B.
+   * Multiplies two `Tensor`s element-wise, A * B.
    *
    * Inputs must be the same shape. For broadcasting support, use mul().
    *
-   * @param a The first `Tensor`.
-   * @param b The second `Tensor`. Must have the same dtype as `a`.
+   * @param a The first tensor to multiply.
+   * @param b The first tensor to multiply. Must have the same
+   *    dtype as `a`.
    */
   @operation
   static mulStrict<T extends Tensor>(a: T, b: T): T {
@@ -243,20 +294,36 @@ export class Ops {
   }
 
   /**
-   * Divides two Tensors element-wise, A / B. Supports broadcasting.
+   * Divides two `Tensor`s element-wise, A / B. Supports broadcasting.
    *
    * We also expose `divStrict` which has the same signature as this op and
    * asserts that `a` and `b` are the same shape (does not broadcast).
    *
-   * @param a The first `Tensor`.
-   * @param b The second `Tensor`. Must have the same dtype as `a`.
+   * ```js
+   * const a = dl.tensor1d([1, 4, 9, 16]);
+   * const b = dl.tensor1d([1, 2, 3, 4]);
+   *
+   * a.div(b).print();  // or dl.div(a, b)
+   * ```
+   *
+   * ```js
+   * // Broadcast div a with b.
+   * const a = dl.tensor1d([2, 4, 6, 8]);
+   * const b = dl.scalar(2);
+   *
+   * a.div(b).print();  // or dl.div(a, b)
+   * ```
+   *
+   * @param a The first tensor as the numerator.
+   * @param b The second tensor as the denominator. Must have the same dtype as
+   * `a`.
    */
   @doc({heading: 'Operations', subheading: 'Arithmetic'})
   @operation
   static div<T extends Tensor>(a: Tensor, b: Tensor): T {
     const outShape =
         broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
-    const der = (dy: Tensor, y: Tensor) => {
+    const der = (dy: Tensor) => {
       const derA = () => {
         const res = dy.div(b.toFloat());
         const reduceAxes = broadcast_util.getReductionAxes(a.shape, outShape);
@@ -276,15 +343,16 @@ export class Ops {
       };
       return {a: derA, b: derB};
     };
-    return ENV.engine.executeKernel('Div', {inputs: {a, b}}, der) as T;
+    return ENV.engine.runKernel(backend => backend.divide(a, b), {a, b}, der) as
+        T;
   }
 
   /**
-   * Divides two Tensors element-wise, A / B. Inputs must
+   * Divides two `Tensor`s element-wise, A / B. Inputs must
    * be the same shape.
    *
-   * @param a The first Tensor to multiply element-wise.
-   * @param b The second Tensor to multiply element-wise.
+   * @param a The first tensor as the numerator for element-wise division.
+   * @param b The second tensor as the denominator for element-wise division.
    */
   @operation
   static divStrict<T extends Tensor>(a: T, b: T): T {
@@ -299,6 +367,21 @@ export class Ops {
    * We also expose `minimumStrict` which has the same signature as this op and
    * asserts that `a` and `b` are the same shape (does not broadcast).
    *
+   * ```js
+   * const a = dl.tensor1d([1, 4, 3, 16]);
+   * const b = dl.tensor1d([1, 2, 9, 4]);
+   *
+   * a.minumum(b).print();  // or dl.minumum(a, b)
+   * ```
+   *
+   * ```js
+   * // Broadcast minumum a with b.
+   * const a = dl.tensor1d([2, 4, 6, 8]);
+   * const b = dl.scalar(5);
+   *
+   * a.minumum(b).print();  // or dl.minumum(a, b)
+   * ```
+   *
    * @param a The first tensor.
    * @param b The second tensor. Must have the same type as `a`.
    */
@@ -307,20 +390,21 @@ export class Ops {
   static minimum<T extends Tensor>(a: Tensor, b: Tensor): T {
     util.assertTypesMatch(a, b);
     broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
-    const der = (dy: Tensor, y: Tensor) => {
+    const der = (dy: Tensor) => {
       const derA = () => dy.mul(a.lessEqual(b).toFloat());
       const derB = () => dy.mul(a.greater(b).toFloat());
       return {a: derA, b: derB};
     };
-    return ENV.engine.executeKernel('Minimum', {inputs: {a, b}}, der) as T;
+    return ENV.engine.runKernel(
+               backend => backend.minimum(a, b), {a, b}, der) as T;
   }
 
   /**
    * Returns the min of a and b (`a < b ? a : b`) element-wise. Inputs must
    * be the same shape. For broadcasting support, use minimum().
    *
-   * @param a The first `Tensor`.
-   * @param b The second `Tensor`. Must have the same dtype as `a`.
+   * @param a The first tensor.
+   * @param b The second tensor. Must have the same dtype as `a`.
    */
   @operation
   static minimumStrict<T extends Tensor>(a: T, b: T): T {
@@ -335,6 +419,20 @@ export class Ops {
    * We also expose `maximumStrict` which has the same signature as this op and
    * asserts that `a` and `b` are the same shape (does not broadcast).
    *
+   * ```js
+   * const a = dl.tensor1d([1, 4, 3, 16]);
+   * const b = dl.tensor1d([1, 2, 9, 4]);
+   *
+   * a.maximum(b).print();  // or dl.maximum(a, b)
+   * ```
+   *
+   * ```js
+   * // Broadcast maximum a with b.
+   * const a = dl.tensor1d([2, 4, 6, 8]);
+   * const b = dl.scalar(5);
+   *
+   * a.maximum(b).print();  // or dl.maximum(a, b)
+   * ```
    *
    * @param a The first tensor.
    * @param b The second tensor. Must have the same type as `a`.
@@ -344,20 +442,21 @@ export class Ops {
   static maximum<T extends Tensor>(a: Tensor, b: Tensor): T {
     util.assertTypesMatch(a, b);
     broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
-    const der = (dy: Tensor, y: Tensor) => {
+    const der = (dy: Tensor) => {
       const derA = () => dy.mul(a.greaterEqual(b).toFloat());
       const derB = () => dy.mul(a.less(b).toFloat());
       return {a: derA, b: derB};
     };
-    return ENV.engine.executeKernel('Maximum', {inputs: {a, b}}, der) as T;
+    return ENV.engine.runKernel(
+               backend => backend.maximum(a, b), {a, b}, der) as T;
   }
 
   /**
    * Returns the max of a and b (`a > b ? a : b`) element-wise. Inputs must
    * be the same shape. For broadcasting support, use maximum().
    *
-   * @param a The first `Tensor`.
-   * @param b The second `Tensor`. Must have the same dtype as `a`.
+   * @param a The first tensor.
+   * @param b The second tensor. Must have the same dtype as `a`.
    */
   @operation
   static maximumStrict<T extends Tensor>(a: T, b: T): T {

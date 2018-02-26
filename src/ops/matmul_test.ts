@@ -16,10 +16,10 @@
  */
 
 import * as dl from '../index';
-import {MatrixOrientation} from '../kernels/types/matmul';
 // tslint:disable-next-line:max-line-length
 import {ALL_ENVS, describeWithFlags, expectArraysClose, expectNumbersClose, WEBGL_ENVS} from '../test_util';
 import {Rank} from '../types';
+import {MatmulOps} from './matmul';
 
 describeWithFlags('matmul', ALL_ENVS, () => {
   it('A x B', () => {
@@ -36,8 +36,9 @@ describeWithFlags('matmul', ALL_ENVS, () => {
     const a = dl.tensor2d([1, 2, 3, 4, 5, 6], [2, 3]);
     const b = dl.tensor2d([1, 0, 2, 4, 3, 0], [2, 3]);
 
-    const c = dl.matMul(
-        a, b, MatrixOrientation.REGULAR, MatrixOrientation.TRANSPOSED);
+    const transposeA = false;
+    const transposeB = true;
+    const c = dl.matMul(a, b, transposeA, transposeB);
 
     const expected = [7, 10, 16, 31];
     expectArraysClose(c, expected);
@@ -47,8 +48,9 @@ describeWithFlags('matmul', ALL_ENVS, () => {
     const a = dl.tensor2d([1, 2, 3, 4, 5, 6], [2, 3]);
     const b = dl.tensor2d([1, 0, 2, 4, 3, 0], [2, 3]);
 
-    const c = dl.matMul(
-        a, b, MatrixOrientation.TRANSPOSED, MatrixOrientation.REGULAR);
+    const transposeA = true;
+    const transposeB = false;
+    const c = dl.matMul(a, b, transposeA, transposeB);
 
     const expected = [17, 12, 2, 22, 15, 4, 27, 18, 6];
     expectArraysClose(c, expected);
@@ -58,8 +60,9 @@ describeWithFlags('matmul', ALL_ENVS, () => {
     const a = dl.tensor2d([1, 2, 3, 4, 5, 6], [3, 2]);
     const b = dl.tensor2d([1, 0, 2, 4, 3, 0], [2, 3]);
 
-    const c = dl.matMul(
-        a, b, MatrixOrientation.TRANSPOSED, MatrixOrientation.TRANSPOSED);
+    const transposeA = true;
+    const transposeB = true;
+    const c = dl.matMul(a, b, transposeA, transposeB);
 
     const expected = [11, 13, 14, 20];
     expectArraysClose(c, expected);
@@ -70,7 +73,9 @@ describeWithFlags('matmul', ALL_ENVS, () => {
     const b = dl.zeros<Rank.R2>([3, 2]);
 
     const f = () => {
-      dl.matMul(a, b, MatrixOrientation.REGULAR, MatrixOrientation.TRANSPOSED);
+      const transposeA = false;
+      const transposeB = true;
+      dl.matMul(a, b, transposeA, transposeB);
     };
     expect(f).toThrowError();
   });
@@ -80,7 +85,9 @@ describeWithFlags('matmul', ALL_ENVS, () => {
     const b = dl.zeros<Rank.R2>([3, 2]);
 
     const f = () => {
-      dl.matMul(a, b, MatrixOrientation.TRANSPOSED, MatrixOrientation.REGULAR);
+      const transposeA = true;
+      const transposeB = false;
+      dl.matMul(a, b, transposeA, transposeB);
     };
     expect(f).toThrowError();
   });
@@ -90,8 +97,9 @@ describeWithFlags('matmul', ALL_ENVS, () => {
     const b = dl.zeros<Rank.R2>([3, 2]);
 
     const f = () => {
-      dl.matMul(
-          a, b, MatrixOrientation.TRANSPOSED, MatrixOrientation.TRANSPOSED);
+      const transposeA = true;
+      const transposeB = true;
+      dl.matMul(a, b, transposeA, transposeB);
     };
     expect(f).toThrowError();
   });
@@ -186,7 +194,7 @@ describeWithFlags('matmul', ALL_ENVS, () => {
   it('Dot product', () => {
     const v1 = dl.tensor1d([2, 3]);
     const v2 = dl.tensor1d([2, 1]);
-    const result = dl.dotProduct(v1, v2);
+    const result = MatmulOps.dotProduct(v1, v2);
 
     expectNumbersClose(result.get(), 7);
   });
@@ -194,7 +202,7 @@ describeWithFlags('matmul', ALL_ENVS, () => {
   it('Dot product propagates NaNs', () => {
     const v1 = dl.tensor1d([2, NaN]);
     const v2 = dl.tensor1d([2, 1]);
-    const result = dl.dotProduct(v1, v2);
+    const result = MatmulOps.dotProduct(v1, v2);
     expect(result.get()).toEqual(NaN);
   });
 
@@ -202,8 +210,8 @@ describeWithFlags('matmul', ALL_ENVS, () => {
     const v1 = dl.tensor1d([2, 3, 3]);
     const v2 = dl.tensor1d([2, 1]);
 
-    expect(() => dl.dotProduct(v1, v2)).toThrowError();
-    expect(() => dl.dotProduct(v2, v1)).toThrowError();
+    expect(() => MatmulOps.dotProduct(v1, v2)).toThrowError();
+    expect(() => MatmulOps.dotProduct(v2, v1)).toThrowError();
   });
 
   it('Dot product throws when passed non vectors', () => {
@@ -211,8 +219,8 @@ describeWithFlags('matmul', ALL_ENVS, () => {
     const v1: any = dl.tensor2d([1, 2, 3, 3], [2, 2]);
     const v2 = dl.tensor1d([2, 1]);
 
-    expect(() => dl.dotProduct(v1, v2)).toThrowError();
-    expect(() => dl.dotProduct(v2, v1)).toThrowError();
+    expect(() => MatmulOps.dotProduct(v1, v2)).toThrowError();
+    expect(() => MatmulOps.dotProduct(v2, v1)).toThrowError();
   });
 
   it('Outer product', () => {
@@ -225,15 +233,17 @@ describeWithFlags('matmul', ALL_ENVS, () => {
     expectArraysClose(result, expected);
   });
 
-  // TODO(nsthorat): fix the precision for backprop.
   it('gradients: A * B', () => {
     const a = dl.tensor2d([1, 2, 3, 10, 20, 30], [2, 3]);
     const b = dl.tensor2d([2, 3, 4, 1, 2, 3], [3, 2]);
     const dy = dl.tensor2d([1, 10, 20, 30], [2, 2]);
 
+    const transposeA = false;
+    const transposeB = false;
     const grads = dl.grads(
-        (a: dl.Tensor2D, b: dl.Tensor2D) => dl.matMul(
-            a, b, MatrixOrientation.REGULAR, MatrixOrientation.REGULAR));
+
+        (a: dl.Tensor2D, b: dl.Tensor2D) =>
+            dl.matMul(a, b, transposeA, transposeB));
     const [da, db] = grads([a, b], dy);
 
     // da = dy * bT
@@ -252,17 +262,14 @@ describeWithFlags('matmul', ALL_ENVS, () => {
 
     // db = aT * dy
     expect(db.shape).toEqual(b.shape);
-    expectArraysClose(
-        db,
-        [
-          a.get(0, 0) * dy.get(0, 0) + a.get(1, 0) * dy.get(1, 0),
-          a.get(0, 0) * dy.get(0, 1) + a.get(1, 0) * dy.get(1, 1),
-          a.get(0, 1) * dy.get(0, 0) + a.get(1, 1) * dy.get(1, 0),
-          a.get(0, 1) * dy.get(0, 1) + a.get(1, 1) * dy.get(1, 1),
-          a.get(0, 2) * dy.get(0, 0) + a.get(1, 2) * dy.get(1, 0),
-          a.get(0, 2) * dy.get(0, 1) + a.get(1, 2) * dy.get(1, 1)
-        ],
-        1e-1);
+    expectArraysClose(db, [
+      a.get(0, 0) * dy.get(0, 0) + a.get(1, 0) * dy.get(1, 0),
+      a.get(0, 0) * dy.get(0, 1) + a.get(1, 0) * dy.get(1, 1),
+      a.get(0, 1) * dy.get(0, 0) + a.get(1, 1) * dy.get(1, 0),
+      a.get(0, 1) * dy.get(0, 1) + a.get(1, 1) * dy.get(1, 1),
+      a.get(0, 2) * dy.get(0, 0) + a.get(1, 2) * dy.get(1, 0),
+      a.get(0, 2) * dy.get(0, 1) + a.get(1, 2) * dy.get(1, 1)
+    ]);
   });
 });
 

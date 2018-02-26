@@ -15,7 +15,6 @@
  * =============================================================================
  */
 
-import {doc} from '../doc';
 import {ENV} from '../environment';
 import {keep, tidy} from '../globals';
 import {Node} from '../graph/graph';
@@ -25,17 +24,11 @@ import {SummedTensorArrayMap, TensorArrayMap} from '../graph/tensor_array_map';
 import {NDArrayMath} from '../math';
 import {fill, scalar} from '../ops/ops';
 import {Scalar, Tensor} from '../tensor';
-import {variable} from '../tensor';
 import {NamedVariableMap} from '../types';
 
 import {Optimizer} from './optimizer';
 
-/**
- * Optimizer that implements the Adagrad optimization algorithm.
- *
- * Use `dl.train.adagrad` to create a Adagrad optimizer.
- */
-@doc({heading: 'Training', subheading: 'Classes', namespace: 'train'})
+/** @doclink Optimizer */
 export class AdagradOptimizer extends Optimizer {
   private c: Scalar;
   private epsilon: Scalar;
@@ -56,8 +49,11 @@ export class AdagradOptimizer extends Optimizer {
       const value = ENV.engine.registeredVariables[variableName];
       if (this.accumulatedGrads[variableName] == null) {
         const trainable = false;
-        this.accumulatedGrads[variableName] = variable(
-            fill(value.shape, this.initialAccumulatorValue), trainable);
+        tidy(() => {
+          this.accumulatedGrads[variableName] =
+              fill(value.shape, this.initialAccumulatorValue)
+                  .variable(trainable);
+        });
       }
 
       const gradient = variableGradients[variableName];

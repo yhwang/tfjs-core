@@ -16,17 +16,13 @@
  */
 
 // tslint:disable-next-line:max-line-length
-import {Context, execute, TensorHandle, TF_ATTR_BOOL, TF_ATTR_TYPE, TF_BOOL, TF_FLOAT, TF_INT32} from 'tfnodejs';
+import {Context, execute, TensorHandle, TF_ATTR_BOOL, TF_ATTR_TYPE, TF_BOOL, TF_FLOAT, TF_INT32} from 'tf-nodejs';
 
 import {ENV} from '../environment';
-import {KernelBackend} from '../kernels/backend';
+import {BackendTimingInfo, KernelBackend} from '../kernels/backend';
 // tslint:disable-next-line:max-line-length
 import {DataId, Scalar, Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D} from '../tensor';
 import {DataType, Rank} from '../types';
-
-// import {DTypeCode, TFNodeJS} from './nodejs/tf_node';
-// import {TensorHandle} from './nodejs/tf_node';
-import {MatrixOrientation} from './types/matmul';
 
 export class MathBackendNodeJS implements KernelBackend {
   private tensorMap = new WeakMap<DataId, TensorHandle>();
@@ -41,12 +37,11 @@ export class MathBackendNodeJS implements KernelBackend {
     return Tensor.make(shape, {}, dtype) as T;
   }
 
-  matMul(
-      a: Tensor2D, b: Tensor2D, aOrientation: MatrixOrientation,
-      bOrientation: MatrixOrientation): Tensor2D {
+  matMul(a: Tensor2D, b: Tensor2D, transposeA: boolean, transposeB: boolean):
+      Tensor2D {
     const opAttrs = [
-      {name: 'transpose_a', type: TF_ATTR_BOOL, value: false},
-      {name: 'transpose_b', type: TF_ATTR_BOOL, value: false},
+      {name: 'transpose_a', type: TF_ATTR_BOOL, value: transposeA},
+      {name: 'transpose_b', type: TF_ATTR_BOOL, value: transposeB},
       {name: 'T', type: TF_ATTR_TYPE, value: TF_FLOAT}
     ];
     const output = this.makeOutputArray(a.shape, a.dtype);
@@ -56,24 +51,10 @@ export class MathBackendNodeJS implements KernelBackend {
         this.tensorMap.get(output.dataId));
     return output as Tensor2D;
   }
-  slice1D(x: Tensor1D, begin: number, size: number): Tensor1D {
+  slice<T extends Tensor<Rank>>(x: T, begin: number[], size: number[]): T {
     throw new Error('Method not implemented.');
   }
-  slice2D(x: Tensor2D, begin: [number, number], size: [number, number]):
-      Tensor2D {
-    throw new Error('Method not implemented.');
-  }
-  slice3D(x: Tensor3D, begin: [number, number, number], size: [
-    number, number, number
-  ]): Tensor3D {
-    throw new Error('Method not implemented.');
-  }
-  slice4D(x: Tensor4D, begin: [number, number, number, number], size: [
-    number, number, number, number
-  ]): Tensor4D {
-    throw new Error('Method not implemented.');
-  }
-  reverse4D(a: Tensor4D, axis: number[]): Tensor4D {
+  reverse<T extends Tensor<Rank>>(a: T, axis: number[]): T {
     throw new Error('Method not implemented.');
   }
   concat(a: Tensor2D, b: Tensor2D): Tensor2D {
@@ -121,7 +102,7 @@ export class MathBackendNodeJS implements KernelBackend {
   greaterEqual(a: Tensor<Rank>, b: Tensor<Rank>): Tensor<Rank> {
     throw new Error('Method not implemented.');
   }
-  logicalNot(a: Tensor<Rank>): Tensor<Rank> {
+  logicalNot<T extends Tensor<Rank>>(a: T): T {
     throw new Error('Method not implemented.');
   }
   logicalAnd(a: Tensor<Rank>, b: Tensor<Rank>): Tensor<Rank> {
@@ -198,7 +179,7 @@ export class MathBackendNodeJS implements KernelBackend {
   preluDer<T extends Tensor<Rank>>(x: T, alpha: T): T {
     throw new Error('Method not implemented.');
   }
-  int<R extends Rank>(x: Tensor<R>): Tensor<R> {
+  int<T extends Tensor<Rank>>(x: T): T {
     throw new Error('Method not implemented.');
   }
   clip<T extends Tensor<Rank>>(x: T, min: number, max: number): T {
@@ -240,7 +221,7 @@ export class MathBackendNodeJS implements KernelBackend {
   step<T extends Tensor<Rank>>(x: T, alpha: number): T {
     throw new Error('Method not implemented.');
   }
-  conv2d(x: Tensor4D, filter: Tensor4D, bias: Tensor1D, convInfo: {
+  conv2d(x: Tensor4D, filter: Tensor4D, convInfo: {
     batchSize: number; inHeight: number; inWidth: number; inChannels: number;
     outHeight: number;
     outWidth: number;
@@ -289,9 +270,6 @@ export class MathBackendNodeJS implements KernelBackend {
     outShape: [number, number, number, number];
     filterShape: [number, number, number, number];
   }): Tensor4D {
-    throw new Error('Method not implemented.');
-  }
-  conv2dDerBias(dY: Tensor4D): Tensor1D {
     throw new Error('Method not implemented.');
   }
   depthwiseConv2D(input: Tensor4D, filter: Tensor4D, convInfo: {
@@ -399,35 +377,22 @@ export class MathBackendNodeJS implements KernelBackend {
   tile<T extends Tensor<Rank>>(x: T, reps: number[]): T {
     throw new Error('Method not implemented.');
   }
-  pad1D(x: Tensor1D, paddings: [number, number], constantValue: number):
-      Tensor1D {
-    throw new Error('Method not implemented.');
-  }
-  pad2D(
-      x: Tensor2D, paddings: [[number, number], [number, number]],
-      constantValue: number): Tensor2D {
+  pad<T extends Tensor<Rank>>(
+      x: T, paddings: Array<[number, number]>, constantValue: number): T {
     // TODO - pass in the actual type of X
     const opAttrs = [
       {name: 'T', type: TF_ATTR_TYPE, value: TF_FLOAT},
       {name: 'Tpaddings', type: TF_ATTR_TYPE, value: TF_INT32}
     ];
-
-    const topPadding = paddings[0][0];
-    const bottomPadding = paddings[0][1];
-    const leftPadding = paddings[1][0];
-    const rightPadding = paddings[1][1];
-
-    const newShape: [number, number] = [
-      topPadding + x.shape[0] + bottomPadding,
-      leftPadding + x.shape[1] + rightPadding
-    ];
+    const outShape = paddings.map(
+        (p, i) => p[0] /* beforePad */ + x.shape[i] + p[1] /* afterPad */);
 
     // Bind tensor values
     const paddingsTensor = Tensor2D.new([2, 2], paddings, 'int32');
     const constantTensor = Scalar.new(constantValue, x.dtype);
 
     // Different size:
-    const output = this.makeOutputArray(newShape, x.dtype);
+    const output = this.makeOutputArray(outShape, x.dtype);
     execute(
         this.context, 'PadV2', opAttrs,
         [
@@ -436,7 +401,7 @@ export class MathBackendNodeJS implements KernelBackend {
           this.tensorMap.get(constantTensor.dataId)
         ],
         this.tensorMap.get(output.dataId));
-    return output as Tensor2D;
+    return output as T;
   }
   transpose<T extends Tensor<Rank>>(x: T, perm: number[]): T {
     throw new Error('Method not implemented.');
@@ -451,8 +416,8 @@ export class MathBackendNodeJS implements KernelBackend {
   }
   batchNormalization4D(
       x: Tensor4D, mean: Tensor1D|Tensor4D, variance: Tensor1D|Tensor4D,
-      varianceEpsilon: number, scale?: Tensor1D|Tensor4D,
-      offset?: Tensor1D|Tensor4D): Tensor4D {
+      varianceEpsilon: number, scale: Tensor1D|Tensor4D,
+      offset: Tensor1D|Tensor4D): Tensor4D {
     throw new Error('Method not implemented.');
   }
   localResponseNormalization4D(
@@ -478,19 +443,14 @@ export class MathBackendNodeJS implements KernelBackend {
     return this.tensorMap.get(dataId).data();
   }
   disposeData(dataId: object): void {
-    // TODO write me.
     // throw new Error('Method not implemented.');
   }
   write(dataId: object, values: Float32Array|Int32Array|Uint8Array): void {
-    const tensor = this.tensorMap.get(dataId);
-    tensor.bindBuffer(values);
+    this.tensorMap.get(dataId).bindBuffer(values);
   }
   fromPixels(
       pixels: ImageData|HTMLImageElement|HTMLCanvasElement|HTMLVideoElement,
       numChannels: number): Tensor3D {
-    throw new Error('Method not implemented.');
-  }
-  time(query: () => void): Promise<number> {
     throw new Error('Method not implemented.');
   }
   register(dataId: object, shape: number[], dtype: 'float32'|'int32'|'bool'):
@@ -517,6 +477,9 @@ export class MathBackendNodeJS implements KernelBackend {
     this.tensorMap.set(dataId, new TensorHandle(shape, tfDtype));
   }
   memory(): {unreliable: boolean;} {
+    throw new Error('Method not implemented.');
+  }
+  time(f: () => void): Promise<BackendTimingInfo> {
     throw new Error('Method not implemented.');
   }
 }

@@ -55,9 +55,18 @@ describeWithFlags('pad1d', ALL_ENVS, () => {
   it('Should handle invalid paddings', () => {
     const a = dl.tensor1d([1, 2, 3, 4], 'int32');
     const f = () => {
-      dl.pad1d(a, [2, 2, 2]);
+      // tslint:disable-next-line:no-any
+      dl.pad1d(a, [2, 2, 2] as any);
     };
     expect(f).toThrowError();
+  });
+
+  it('grad', () => {
+    const a = dl.tensor1d([1, 2, 3]);
+    const dy = dl.tensor1d([10, 20, 30, 40, 50, 60]);
+    const da = dl.grad((a: dl.Tensor1D) => dl.pad1d(a, [2, 1]))(a, dy);
+    expect(da.shape).toEqual([3]);
+    expectArraysClose(da, [30, 40, 50]);
   });
 });
 
@@ -122,8 +131,43 @@ describeWithFlags('pad2d', ALL_ENVS, () => {
   it('Should handle invalid paddings', () => {
     const a = dl.tensor2d([[1], [2]], [2, 1], 'int32');
     const f = () => {
-      dl.pad2d(a, [[2, 2, 2], [1, 1, 1]]);
+      // tslint:disable-next-line:no-any
+      dl.pad2d(a, [[2, 2, 2], [1, 1, 1]] as any);
     };
     expect(f).toThrowError();
+  });
+
+  it('grad', () => {
+    const a = dl.tensor2d([[1, 2], [3, 4]]);
+    const dy = dl.tensor2d([[0, 0, 0], [10, 20, 0], [30, 40, 0]], [3, 3]);
+    const da =
+        dl.grad((a: dl.Tensor2D) => dl.pad2d(a, [[1, 0], [0, 1]]))(a, dy);
+    expect(da.shape).toEqual([2, 2]);
+    expectArraysClose(da, [10, 20, 30, 40]);
+  });
+});
+
+describeWithFlags('pad', ALL_ENVS, () => {
+  it('Pad tensor2d', () => {
+    let a = dl.tensor2d([[1], [2]], [2, 1], 'int32');
+    let b = dl.pad(a, [[1, 1], [1, 1]]);
+    // 0, 0, 0
+    // 0, 1, 0
+    // 0, 2, 0
+    // 0, 0, 0
+    expectArraysClose(b, [0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0]);
+
+    a = dl.tensor2d([[1, 2, 3], [4, 5, 6]], [2, 3], 'int32');
+    b = dl.pad(a, [[2, 2], [1, 1]]);
+    // 0, 0, 0, 0, 0
+    // 0, 0, 0, 0, 0
+    // 0, 1, 2, 3, 0
+    // 0, 4, 5, 6, 0
+    // 0, 0, 0, 0, 0
+    // 0, 0, 0, 0, 0
+    expectArraysClose(b, [
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0,
+      0, 4, 5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ]);
   });
 });

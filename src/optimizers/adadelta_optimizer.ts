@@ -15,7 +15,6 @@
  * =============================================================================
  */
 
-import {doc} from '../doc';
 import {ENV} from '../environment';
 import {keep, tidy} from '../globals';
 import {Node} from '../graph/graph';
@@ -25,18 +24,10 @@ import {SummedTensorArrayMap, TensorArrayMap} from '../graph/tensor_array_map';
 import {NDArrayMath} from '../math';
 import {scalar, zerosLike} from '../ops/ops';
 import {Scalar, Tensor} from '../tensor';
-import {variable} from '../tensor';
 import {NamedVariableMap} from '../types';
 import {Optimizer} from './optimizer';
 
-/**
- * Optimizer that implements the Adadelta algorithm.
- *
- * Use `dl.train.adadelta` to create an Adadelta optimizer.
- *
- * See: https://arxiv.org/abs/1212.5701
- */
-@doc({heading: 'Training', subheading: 'Classes', namespace: 'train'})
+/** @doclink Optimizer */
 export class AdadeltaOptimizer extends Optimizer {
   private c: Scalar;
   private epsilon: Scalar;
@@ -63,13 +54,17 @@ export class AdadeltaOptimizer extends Optimizer {
       const value = ENV.engine.registeredVariables[variableName];
       if (this.accumulatedGrads[variableName] == null) {
         const trainable = false;
-        this.accumulatedGrads[variableName] =
-            variable(zerosLike(value), trainable);
+        tidy(() => {
+          this.accumulatedGrads[variableName] =
+              zerosLike(value).variable(trainable);
+        });
       }
       if (this.accumulatedUpdates[variableName] == null) {
         const trainable = false;
-        this.accumulatedUpdates[variableName] =
-            variable(zerosLike(value), trainable);
+        tidy(() => {
+          this.accumulatedUpdates[variableName] =
+              zerosLike(value).variable(trainable);
+        });
       }
 
       const gradient = variableGradients[variableName];

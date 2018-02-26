@@ -14,14 +14,17 @@
  * limitations under the License.
  * =============================================================================
  */
+import {doc} from './doc';
 
-import {KernelNode} from '../../tape_types';
-import {Tensor4D} from '../../tensor';
-
-export interface Reverse4DNode extends KernelNode {
-  inputAndArgs: {inputs: {x: Tensor4D;}; args: {axis: number[];};};
-  output: Tensor4D;
-  gradient: (dy: Tensor4D, y: Tensor4D) => {
-    x: () => Tensor4D;
-  };
+export class BrowserUtil {
+  /**
+   * Returns a promise that resolve when a requestAnimationFrame has completed.
+   *
+   * This is simply a sugar method so that users can do the following:
+   * `await dl.nextFrame();`
+   */
+  @doc({heading: 'Performance', subheading: 'Timing'})
+  static nextFrame(): Promise<void> {
+    return new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+  }
 }

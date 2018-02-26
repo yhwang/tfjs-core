@@ -15,18 +15,18 @@
  * =============================================================================
  */
 
-import {operation} from './operation';
 import {doc} from '../doc';
 import {ENV} from '../environment';
 import {Tensor3D, Tensor4D} from '../tensor';
 import * as util from '../util';
+import {operation} from './operation';
 
-export class LRN {
+export class LRNOps {
   /**
    * Normalizes the activation of a local neighborhood across or within
    * channels.
    *
-   * @param x The input Tensor. The 4-D input tensor is treated as a 3-D array
+   * @param x The input tensor. The 4-D input tensor is treated as a 3-D array
    *     of 1D vectors (along the last dimension), and each vector is
    *     normalized independently.
    * @param radius The number of adjacent channels or spatial locations of the
@@ -35,8 +35,7 @@ export class LRN {
    * @param bias A constant bias term for the basis.
    * @param alpha A scale factor, usually positive.
    * @param beta An exponent.
-   * @param normRegion A string from: ['acrossChannels', 'withinChannel'].
-   *     Default is 'acrossChannels'.
+   * @param normRegion Default is 'acrossChannels'.
    */
   @doc({heading: 'Operations', subheading: 'Normalization'})
   @operation
@@ -57,9 +56,10 @@ export class LRN {
       reshapedTo4D = true;
       x4D = x.as4D(1, x.shape[0], x.shape[1], x.shape[2]);
     }
-    const res = ENV.engine.executeKernel(
-        'LRN4D',
-        {inputs: {x: x4D}, args: {radius, bias, alpha, beta, normRegion}});
+    const res = ENV.engine.runKernel(
+        backend => backend.localResponseNormalization4D(
+            x4D, radius, bias, alpha, beta, normRegion),
+        {x4D});
     if (reshapedTo4D) {
       return res.as3D(res.shape[1], res.shape[2], res.shape[3]) as T;
     } else {

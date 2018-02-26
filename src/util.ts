@@ -14,10 +14,10 @@
  * limitations under the License.
  * =============================================================================
  */
-
 import {Tensor} from './tensor';
 // tslint:disable-next-line:max-line-length
 import {DataType, DataTypeMap, FlatVector, NamedTensorMap, RecursiveArray, RegularArray, TypedArray} from './types';
+
 /** Shuffles the array using Fisher-Yates algorithm. */
 // tslint:disable-next-line:no-any
 export function shuffle(array: any[]|Uint32Array|Int32Array|
@@ -308,11 +308,12 @@ export function squeezeShape(shape: number[], axis?: number[]):
   const keptDims: number[] = [];
   let j = 0;
   for (let i = 0; i < shape.length; ++i) {
-    if (axis !== undefined) {
+    if (axis != null) {
       if (axis[j] === i && shape[i] > 1) {
-        throw new Error(`axis ${i} is not 1`);
+        throw new Error(
+            `Can't squeeze axis ${i} since its dim '${shape[i]}' is not 1`);
       }
-      if ((axis[j] === undefined || axis[j] > i) && shape[i] === 1) {
+      if ((axis[j] == null || axis[j] > i) && shape[i] === 1) {
         newShape.push(shape[i]);
         keptDims.push(i);
       }
@@ -403,15 +404,6 @@ export function hasEncodingLoss(oldType: DataType, newType: DataType): boolean {
   return true;
 }
 
-/**
- * Returns a promise that resolve when a requestAnimationFrame has completed.
- * This is simply a sugar method so that users can do the following:
- * `await dl.nextFrame();`
- */
-export function nextFrame(): Promise<void> {
-  return new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-}
-
 export function copyTypedArray<D extends DataType>(
     array: DataTypeMap[D]|number[]|boolean[], dtype: D): DataTypeMap[D] {
   if (dtype == null || dtype === 'float32') {
@@ -457,4 +449,8 @@ export function bytesPerElement(dtype: DataType): number {
   } else {
     throw new Error(`Unknown dtype ${dtype}`);
   }
+}
+
+export function isFunction(f: Function) {
+  return !!(f && f.constructor && f.call && f.apply);
 }

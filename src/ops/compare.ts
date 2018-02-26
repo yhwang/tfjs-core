@@ -22,30 +22,30 @@ import * as util from '../util';
 import * as broadcast_util from './broadcast_util';
 import {operation} from './operation';
 
-export class Ops {
+export class CompareOps {
   /**
    * Returns the truth value of (a != b) element-wise. Supports broadcasting.
    *
    * We also expose `notEqualStrict` which has the same signature as this op and
    * asserts that `a` and `b` are the same shape (does not broadcast).
    *
-   * @param a The first input `Tensor`.
-   * @param b The second input `Tensor`. Must have the same dtype as `a`.
+   * @param a The first input tensor.
+   * @param b The second input tensor. Must have the same dtype as `a`.
    */
   @doc({heading: 'Operations', subheading: 'Logical'})
   @operation
   static notEqual<T extends Tensor>(a: Tensor, b: Tensor): T {
     util.assertTypesMatch(a, b);
     broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
-    return ENV.engine.executeKernel('NotEqual', {inputs: {a, b}}) as T;
+    return ENV.engine.runKernel(backend => backend.notEqual(a, b), {a, b}) as T;
   }
 
   /**
    * Strict version of `notEqual` that forces `a` and `b` to be of the same
    * shape.
    *
-   * @param a The first input `Tensor`.
-   * @param b The second input `Tensor`. Must have the same shape and dtype as
+   * @param a The first input tensor.
+   * @param b The second input tensor. Must have the same shape and dtype as
    *     `a`.
    */
   @operation
@@ -60,23 +60,23 @@ export class Ops {
    * We also expose `lessStrict` which has the same signature as this op and
    * asserts that `a` and `b` are the same shape (does not broadcast).
    *
-   * @param a The first input `Tensor`.
-   * @param b The second input `Tensor`. Must have the same dtype as `a`.
+   * @param a The first input tensor.
+   * @param b The second input tensor. Must have the same dtype as `a`.
    */
   @doc({heading: 'Operations', subheading: 'Logical'})
   @operation
   static less<T extends Tensor>(a: Tensor, b: Tensor): T {
     util.assertTypesMatch(a, b);
     broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
-    return ENV.engine.executeKernel('Less', {inputs: {a, b}}) as T;
+    return ENV.engine.runKernel(backend => backend.less(a, b), {a, b}) as T;
   }
 
   /**
    * Strict version of `less` that forces `a` and `b` to be of the same
    * shape.
    *
-   * @param a The first input `Tensor`.
-   * @param b The second input `Tensor`. Must have the same shape and dtype as
+   * @param a The first input tensor.
+   * @param b The second input tensor. Must have the same shape and dtype as
    *     `a`.
    */
   @operation
@@ -91,15 +91,15 @@ export class Ops {
    * We also expose `equalStrict` which has the same signature as this op
    * and asserts that `a` and `b` are the same shape (does not broadcast).
    *
-   * @param a The first input `Tensor`.
-   * @param b The second input `Tensor`. Must have the same dtype as `a`.
+   * @param a The first input tensor.
+   * @param b The second input tensor. Must have the same dtype as `a`.
    */
   @doc({heading: 'Operations', subheading: 'Logical'})
   @operation
   static equal<T extends Tensor>(a: Tensor, b: Tensor): T {
     util.assertTypesMatch(a, b);
     broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
-    return ENV.engine.executeKernel('Equal', {inputs: {a, b}}) as T;
+    return ENV.engine.runKernel(backend => backend.equal(a, b), {a, b}) as T;
   }
 
   @operation
@@ -114,15 +114,16 @@ export class Ops {
    * We also expose `lessEqualStrict` which has the same signature as this op
    * and asserts that `a` and `b` are the same shape (does not broadcast).
    *
-   * @param a The first input `Tensor`.
-   * @param b The second input `Tensor`. Must have the same dtype as `a`.
+   * @param a The first input tensor.
+   * @param b The second input tensor. Must have the same dtype as `a`.
    */
   @doc({heading: 'Operations', subheading: 'Logical'})
   @operation
   static lessEqual<T extends Tensor>(a: Tensor, b: Tensor): T {
     util.assertTypesMatch(a, b);
     broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
-    return ENV.engine.executeKernel('LessEqual', {inputs: {a, b}}) as T;
+    return ENV.engine.runKernel(backend => backend.lessEqual(a, b), {a, b}) as
+        T;
   }
 
   @operation
@@ -137,15 +138,15 @@ export class Ops {
    * We also expose `greaterStrict` which has the same signature as this
    * op and asserts that `a` and `b` are the same shape (does not broadcast).
    *
-   * @param a The first input `Tensor`.
-   * @param b The second input `Tensor`. Must have the same dtype as `a`.
+   * @param a The first input tensor.
+   * @param b The second input tensor. Must have the same dtype as `a`.
    */
   @doc({heading: 'Operations', subheading: 'Logical'})
   @operation
   static greater<T extends Tensor>(a: Tensor, b: Tensor): T {
     util.assertTypesMatch(a, b);
     broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
-    return ENV.engine.executeKernel('Greater', {inputs: {a, b}}) as T;
+    return ENV.engine.runKernel(backend => backend.greater(a, b), {a, b}) as T;
   }
 
   @operation
@@ -160,15 +161,16 @@ export class Ops {
    * We also expose `greaterStrict` which has the same signature as this
    * op and asserts that `a` and `b` are the same shape (does not broadcast).
    *
-   * @param a The first input `Tensor`.
-   * @param b The second input `Tensor`. Must have the same dtype as `a`.
+   * @param a The first input tensor.
+   * @param b The second input tensor. Must have the same dtype as `a`.
    */
   @doc({heading: 'Operations', subheading: 'Logical'})
   @operation
   static greaterEqual<T extends Tensor>(a: Tensor, b: Tensor): T {
     util.assertTypesMatch(a, b);
     broadcast_util.assertAndGetBroadcastShape(a.shape, b.shape);
-    return ENV.engine.executeKernel('GreaterEqual', {inputs: {a, b}}) as T;
+    return ENV.engine.runKernel(
+               backend => backend.greaterEqual(a, b), {a, b}) as T;
   }
 
   @operation

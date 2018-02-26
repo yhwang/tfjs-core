@@ -15,13 +15,13 @@
  * =============================================================================
  */
 
-import {operation} from './operation';
 import {doc} from '../doc';
 import {ENV} from '../environment';
 import {Tensor3D, Tensor4D} from '../tensor';
 import * as util from '../util';
+import {operation} from './operation';
 
-export class Ops {
+export class ImageOps {
   /**
    * Bilinear resize a batch of 3D images to a new shape.
    *
@@ -29,10 +29,10 @@ export class Ops {
    *     `[batch, height, width, inChannels]`. If rank 3, batch of 1 is assumed.
    * @param size The new shape `[newHeight, newWidth]` to resize the
    *     images to. Each channel is resized individually.
-   * @param alignCorners An optional bool. Defaults to False. If true, rescale
-   *     input by (new_height - 1) / (height - 1), which exactly aligns the 4
+   * @param alignCorners Defaults to False. If true, rescale
+   *     input by `(new_height - 1) / (height - 1)`, which exactly aligns the 4
    *     corners of images and resized images. If false, rescale by
-   *     new_height/height. Treat similarly the width dimension.
+   *     `new_height / height`. Treat similarly the width dimension.
    */
   @doc({heading: 'Operations', subheading: 'Images', namespace: 'image'})
   @operation
@@ -54,9 +54,10 @@ export class Ops {
           images.as4D(1, images.shape[0], images.shape[1], images.shape[2]);
     }
     const [newHeight, newWidth] = size;
-    const res = ENV.engine.executeKernel(
-        'ResizeBilinear',
-        {inputs: {x: batchImages}, args: {newHeight, newWidth, alignCorners}});
+    const res = ENV.engine.runKernel(
+        backend => backend.resizeBilinear(
+            batchImages, newHeight, newWidth, alignCorners),
+        {batchImages});
     if (reshapedTo4D) {
       return res.as3D(res.shape[1], res.shape[2], res.shape[3]) as T;
     }

@@ -15,7 +15,6 @@
  * =============================================================================
  */
 
-import {doc} from '../doc';
 import {ENV} from '../environment';
 import {keep, tidy} from '../globals';
 import {Node} from '../graph/graph';
@@ -25,16 +24,10 @@ import {SummedTensorArrayMap, TensorArrayMap} from '../graph/tensor_array_map';
 import {NDArrayMath} from '../math';
 import {scalar, zerosLike} from '../ops/ops';
 import {Scalar, Tensor} from '../tensor';
-import {variable} from '../tensor';
 import {NamedVariableMap} from '../types';
 import {SGDOptimizer} from './sgd_optimizer';
 
-/**
- * Optimizer that implements momentum gradient descent.
- *
- * Use `dl.train.momentum` to create a momentum optimizer.
- */
-@doc({heading: 'Training', subheading: 'Classes', namespace: 'train'})
+/** @doclink Optimizer */
 export class MomentumOptimizer extends SGDOptimizer {
   private m: Scalar;
   private accumulations: NamedVariableMap;
@@ -52,8 +45,10 @@ export class MomentumOptimizer extends SGDOptimizer {
       const value = ENV.engine.registeredVariables[variableName];
       if (this.accumulations[variableName] == null) {
         const trainable = false;
-        this.accumulations[variableName] =
-            variable(zerosLike(value), trainable);
+        tidy(() => {
+          this.accumulations[variableName] =
+              zerosLike(value).variable(trainable);
+        });
       }
 
       const accumulation = this.accumulations[variableName];

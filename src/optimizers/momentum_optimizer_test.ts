@@ -29,7 +29,7 @@ describeWithFlags('MomentumOptimizer', ALL_ENVS, () => {
     const momentum = .5;
     const optimizer = dl.train.momentum(learningRate, momentum);
 
-    const x = dl.variable(dl.tensor1d([1, 2]));
+    const x = dl.tensor1d([1, 2]).variable();
 
     const f = () => x.square().sum() as dl.Scalar;
 
@@ -67,8 +67,8 @@ describeWithFlags('MomentumOptimizer', ALL_ENVS, () => {
     x.dispose();
     optimizer.dispose();
 
-    // There should be no more Tensors.
-    expect(dl.memory().numTensors).toBe(0);
+    // The only tensor remaining is the argument to variable().
+    expect(dl.memory().numTensors).toBe(1);
   });
 
   it('graph', () => {
