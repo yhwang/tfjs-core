@@ -37,6 +37,19 @@ p {
   font-family: 'Roboto', sans-serif;
 }
 
+/* Deprecation banner */
+
+
+.deprecation-header .message {
+  width: 70%;
+  margin: 0 auto;
+  font-size: 120%;
+}
+
+.deprecation-header h2 a {
+  font-size: 40px;
+}
+
 /* CPPN Demo */
 .banner {
   background-size: cover;

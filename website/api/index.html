@@ -36,6 +36,15 @@
       padding-right: 16px;
     }
 
+    .deprecation-header .message {
+      max-width: 720px;
+      font-size: 120%;
+    }
+
+    .deprecation-header h2 {
+      font-size: 40px;
+    }
+
     .container {
       display: flex;
       flex-direction: column;
@@ -447,6 +456,27 @@
       </div>
 
       <div class="reference">
+        <div class="deprecation-header">
+          <div class="message">
+            <h2>deeplearn.js has become
+              <a href="https://js.tensorflow.org/">TensorFlow.js</a>
+            </h2>
+            <p>
+              We want to point you to
+              <a href="https://js.tensorflow.org/">the new website</a> for the successor to deeplearn.js.
+              <a href="https://js.tensorflow.org/">TensorFlow.js</a> picks up where deeplearn.js v0.5 leaves off and adds a whole host of functionality we think you will
+              find really useful.
+            </p>
+            <p>
+              This site will no longer be updated and will eventually redirect to
+              <a href="https://js.tensorflow.org/">TensorFlow.js</a>. We will be keeping this site around for a little while to make the transition to
+              <a href="https://js.tensorflow.org/">TensorFlow.js</a>
+              smoother. Thanks and we hope you will give
+              <a href="https://js.tensorflow.org/">TensorFlow.js</a> a try!
+            </p>
+          </div>
+        </div>
+
         {{#headings}}
         <div class="section">
           {{#subheadings}}
