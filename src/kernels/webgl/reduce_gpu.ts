@@ -24,7 +24,8 @@ export class ReduceProgram implements GPGPUProgram {
   userCode: string;
 
   constructor(
-      reduceInfo: ReduceInfo, reduceType: 'all'|'any'|'max'|'min'|'sum') {
+      reduceInfo: ReduceInfo,
+      reduceType: 'all'|'any'|'max'|'min'|'sum'|'prod') {
     const windowSize = reduceInfo.windowSize;
     const batchSize = reduceInfo.batchSize;
     const inSize = reduceInfo.inSize;
@@ -47,6 +48,8 @@ export class ReduceProgram implements GPGPUProgram {
 
     if (reduceType === 'sum') {
       returnValue = `sumValue`;
+    } else if (reduceType === 'prod') {
+      returnValue = `prodValue`;
     } else if (reduceType === 'all') {
       returnValue = `allValue`;
     } else if (reduceType === 'any') {
@@ -56,13 +59,17 @@ export class ReduceProgram implements GPGPUProgram {
     const windowSizeNearestVec4 = Math.floor(windowSize / 4) * 4;
     const windowSizeVec4Remainder = windowSize % 4;
 
-    let updateSnippet = `
-      if (${reduceType === 'sum'}) {
-        sumValue += dot(values, ones);
-      } else {
-        minMaxValue = ${compareOp}(values, minMaxValue);
-      }
-    `;
+    let updateSnippet: string;
+    switch (reduceType) {
+      case 'sum':
+        updateSnippet = 'sumValue += dot(values, ones);';
+        break;
+      case 'prod':
+        updateSnippet = 'prodValue *= dot(values, ones);';
+        break;
+      default:
+        updateSnippet = `minMaxValue = ${compareOp}(values, minMaxValue);`;
+    }
 
     let vecType = `vec4`;
 
@@ -109,6 +116,7 @@ export class ReduceProgram implements GPGPUProgram {
 
         vec4 minMaxValue = vec4(${initializationValue});
         float sumValue = 0.0;
+        float prodValue = 1.0;
         float allValue = 1.0;
         float anyValue = 0.0;
 

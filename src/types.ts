@@ -110,6 +110,11 @@ export function sumOutType(type: DataType): DataType {
   return upcastType(type, 'int32');
 }
 
+/** Returns the output type after product. */
+export function prodOutType(type: DataType): DataType {
+  return upcastType(type, 'int32');
+}
+
 /** @docalias TypedArray|Array */
 export type TensorLike =
     TypedArray|number|boolean|number[]|number[][]|number[][][]|number[][][][]|

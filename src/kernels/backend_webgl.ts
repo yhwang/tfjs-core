@@ -29,7 +29,7 @@ import {getStridedSlicedInfo} from '../ops/slice_util';
 import {softmax} from '../ops/softmax';
 import {range, scalar, tensor} from '../ops/tensor_ops';
 import {DataId, setTensorTracker, Tensor, Tensor1D, Tensor2D, Tensor3D, Tensor4D} from '../tensor';
-import {DataType, DataTypeMap, Rank, RecursiveArray, ShapeMap, sumOutType, TypedArray, upcastType} from '../types';
+import {DataType, DataTypeMap, prodOutType, Rank, RecursiveArray, ShapeMap, sumOutType, TypedArray, upcastType} from '../types';
 import * as util from '../util';
 import {getTypedArrayFromDType, sizeFromShape} from '../util';
 import {KernelBackend} from './backend';
@@ -761,7 +761,7 @@ export class MathBackendWebGL implements KernelBackend {
   }
 
   private reduce(
-      x: Tensor2D, reduceType: 'all'|'any'|'max'|'min'|'sum',
+      x: Tensor2D, reduceType: 'all'|'any'|'max'|'min'|'sum'|'prod',
       dtype: DataType): Tensor2D {
     const batchSize = x.shape[0];
     const inSize = x.shape[1];
@@ -814,6 +814,16 @@ export class MathBackendWebGL implements KernelBackend {
     const a2D = x.as2D(-1, inSize);
     const outputDType = sumOutType(x.dtype);
     return this.reduce(a2D, 'sum', outputDType).reshape(outShape);
+  }
+
+  prod(x: Tensor, axes: number[]): Tensor {
+    axis_util.assertAxesAreInnerMostDims('prod', axes, x.rank);
+    const [outShape, reduceShape] =
+        axis_util.computeOutAndReduceShapes(x.shape, axes);
+    const inSize = util.sizeFromShape(reduceShape);
+    const a2D = x.as2D(-1, inSize);
+    const outputDType = prodOutType(x.dtype);
+    return this.reduce(a2D, 'prod', outputDType).reshape(outShape);
   }
 
   unsortedSegmentSum<T extends Tensor>(

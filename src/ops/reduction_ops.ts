@@ -142,6 +142,47 @@ function sum_<T extends Tensor>(
   return customOp($x) as T;
 }
 
+function prod_<T extends Tensor>(
+    x: Tensor|TensorLike, axis: number|number[] = null, keepDims = false): T {
+  let $x = convertToTensor(x, 'x', 'prod');
+
+  if ($x.dtype === 'bool') {
+    $x = $x.toInt();
+  }
+  const axes = axis_util.parseAxisParam(axis, $x.shape);
+
+  // Use a custom gradient to bypass 2 gradient backprops since sum is used
+  // extremely often.
+  const customOp = customGrad(x => {
+    const permutation = axis_util.getAxesPermutation(axes, x.rank);
+    let reductionAxes = axes;
+    let permutedX = x;
+    if (permutation != null) {
+      permutedX = x.transpose(permutation);
+      reductionAxes = axis_util.getInnerMostAxes(reductionAxes.length, x.rank);
+    }
+    let value = ENV.engine.runKernel(
+        backend => backend.prod(permutedX, reductionAxes), {permutedX});
+    if (keepDims) {
+      const newShape = axis_util.expandShapeToKeepDim(value.shape, axes);
+      value = value.reshape(newShape);
+    }
+
+    const gradFunc = (dy: Tensor) => {
+      const expandedDyShape = x.shape.slice();
+      axes.forEach(axis => {
+        expandedDyShape[axis] = 1;
+      });
+      const expandedDy = dy.reshape(expandedDyShape);
+      const derX = expandedDy.mul(ones(x.shape, 'float32'));
+      return derX;
+    };
+    return {value, gradFunc};
+  });
+
+  return customOp($x) as T;
+}
+
 /**
  * Computes the mean of elements across dimensions of a `Tensor`.
  *
@@ -554,3 +595,4 @@ export const mean = op({mean_});
 export const min = op({min_});
 export const moments = op({moments_});
 export const sum = op({sum_});
+export const prod = op({prod_});
